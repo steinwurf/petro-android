@@ -3,7 +3,7 @@
 #ifdef ANDROID
 
 #include <jni.h>
-#include <beem/logging.hpp>
+#include "logging.hpp"
 
 #ifdef __cplusplus
 extern "C"

@@ -11,15 +11,6 @@
 
 namespace logging
 {
-    /// Enumeration for log severity levels.
-    enum severity_level
-    {
-        ANDROID_LOG_INFO,  // LOGI
-        ANDROID_LOG_WARN,  // LOGW
-        ANDROID_LOG_ERROR, // LOGE
-        ANDROID_LOG_FATAL  // LOGFATAL
-    };
-
     // The message_logger acts as a stream and routes the contents of
     // the final stream to the Android logcat output.
     // If ANDROID is not defined, the output is only written to std::cerr.
@@ -30,7 +21,7 @@ namespace logging
     public:
 
         message_logger(const char* file, int line, const char* tag,
-                       severity_level severity) :
+                       android_LogPriority severity) :
             m_file(file), m_tag(tag), m_severity(severity)
         {
             // Prepend the stream with the file and line number.
@@ -90,11 +81,11 @@ namespace logging
 }
 
 // ---------------------- Macro definitions --------------------------
-#define LOGI beem::logging::message_logger((char*)__FILE__, __LINE__, \
-             "native", logging::SEVERITY_INFO).stream()
-#define LOGW beem::logging::message_logger((char*)__FILE__, __LINE__, \
-             "native", logging::SEVERITY_WARNING).stream()
-#define LOGE beem::logging::message_logger((char*)__FILE__, __LINE__, \
-             "native", logging::SEVERITY_ERROR).stream()
-#define LOGF beem::logging::message_logger((char*)__FILE__, __LINE__, \
-             "native", logging::SEVERITY_FATAL).stream()
+#define LOGI logging::message_logger((char*)__FILE__, __LINE__, \
+             "native", ANDROID_LOG_INFO).stream()
+#define LOGW logging::message_logger((char*)__FILE__, __LINE__, \
+             "native", ANDROID_LOG_WARN).stream()
+#define LOGE logging::message_logger((char*)__FILE__, __LINE__, \
+             "native", ANDROID_LOG_ERROR).stream()
+#define LOGF logging::message_logger((char*)__FILE__, __LINE__, \
+             "native", ANDROID_LOG_FATAL).stream()

@@ -123,11 +123,13 @@ def resolve(ctx):
 
 def configure(conf):
 
-    conf.check_cxx(lib='android')
     conf.load("wurf_common_tools")
+    conf.check_cxx(lib='android')
 
 
 def build(bld):
+
+    bld.load("wurf_common_tools")
 
     bld.recurse('jni')
 
