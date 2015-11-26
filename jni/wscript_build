@@ -1,0 +1,9 @@
+#! /usr/bin/env python
+# encoding: utf-8
+
+bld(features=['cxx cxxshlib'],
+    source=bld.path.ant_glob('*.cpp'),
+    target='petro_android',
+    export_includes=['jni'],
+    lib=['android'],
+    use=['petro'])
