@@ -40,5 +40,7 @@ public class NativeInterface {
 
     public static native void nativeInitialize(String mp4_file);
     public static native byte[] getSample(int index);
+    public static native byte[] getPPS();
+    public static native byte[] getSPS();
     public static native void nativeFinalize();
 }

@@ -141,13 +141,20 @@ extern "C"
         env->ReleaseStringUTFChars(jmp4_file, mp4_file_str);
 
         std::ifstream mp4_file(c->mp4_file, std::ios::binary);
-
-        if (not mp4_file.is_open() || not mp4_file.good())
+        LOGI << " good()=" << mp4_file.good();
+        LOGI << " eof()=" << mp4_file.eof();
+        LOGI << " fail()=" << mp4_file.fail();
+        LOGI << " bad()=" << mp4_file.bad();
+        LOGI << " open()=" << mp4_file.is_open();
+        if (!mp4_file.good())
         {
-            LOGF << "Error reading file";
+            LOGF << "Error reading file, it's not good?";
         }
 
-
+        if (!mp4_file.is_open())
+        {
+            LOGF << "Error reading file, it's not open";
+        }
 
         auto data = std::vector<char>((
             std::istreambuf_iterator<char>(mp4_file)),
@@ -182,6 +189,48 @@ extern "C"
         env->CallStaticVoidMethod(native_interface_class, on_initialized_method);
     }
 
+    jbyteArray Java_com_steinwurf_petro_NativeInterface_getPPS(
+        JNIEnv* env, jobject thiz)
+    {
+        (void)thiz;
+        LOGI << "Java_com_steinwurf_petro_NativeInterface_getPPS";
+
+        std::vector<char> pps_buffer = {0, 0, 0, 1};
+
+        auto avcc = std::dynamic_pointer_cast<const petro::box::avcc>(
+            get_native_context(env)->root->get_child("avcC"));
+
+        assert(avcc != nullptr);
+
+        auto pps = avcc->picture_parameter_set(0);
+        pps_buffer.insert(pps_buffer.end(), pps.begin(), pps.end());
+
+        auto jpps = env->NewByteArray(pps_buffer.size());
+        env->SetByteArrayRegion(jpps, 0, pps_buffer.size(), (const jbyte*)pps_buffer.data());
+        return jpps;
+    }
+
+    jbyteArray Java_com_steinwurf_petro_NativeInterface_getSPS(
+        JNIEnv* env, jobject thiz)
+    {
+        (void)thiz;
+        LOGI << "Java_com_steinwurf_petro_NativeInterface_getSPS";
+
+        std::vector<char> sps_buffer = {0, 0, 0, 1};
+
+        auto avcc = std::dynamic_pointer_cast<const petro::box::avcc>(
+            get_native_context(env)->root->get_child("avcC"));
+
+        assert(avcc != nullptr);
+
+        auto sps = avcc->sequence_parameter_set(0);
+        sps_buffer.insert(sps_buffer.end(), sps.begin(), sps.end());
+
+        auto jpps = env->NewByteArray(sps_buffer.size());
+        env->SetByteArrayRegion(jpps, 0, sps_buffer.size(), (const jbyte*)sps_buffer.data());
+        return jpps;
+    }
+
     jbyteArray Java_com_steinwurf_petro_NativeInterface_getSample(
         JNIEnv* env, jobject thiz, jint index)
     {
@@ -208,10 +257,6 @@ extern "C"
         auto avc1 = root->get_child("avc1");
         assert(avc1 != nullptr);
 
-        auto avcc = std::dynamic_pointer_cast<const petro::box::avcc>(
-            avc1->get_child("avcC"));
-        assert(avcc != nullptr);
-
         auto trak = avc1->get_parent("trak");
         assert(trak != nullptr);
 
@@ -227,9 +272,6 @@ extern "C"
             trak->get_child("stsc"));
         assert(stsc != nullptr);
 
-        auto sps = avcc->sequence_parameter_set(0);
-        auto pps = avcc->picture_parameter_set(0);
-
         LOGI << "looking for sample";
         std::vector<char> sample;
         auto found_samples = 0;
@@ -243,9 +285,32 @@ extern "C"
                     LOGI << "found sample";
                     auto actual_size = read_uint32_t((uint8_t*)(data.data() + offset));
                     LOGI << "actual_size " << actual_size;
+                    actual_size += 10;
                     sample.insert(sample.begin(), nalu_seperator.begin(), nalu_seperator.end());
-                    auto data_from = data.begin() + (offset + 4);
-                    sample.insert(sample.end(), data_from, data_from + actual_size);
+
+                    if (found_samples == 50 ||
+                        found_samples == 51 ||
+                        found_samples == 52 ||
+                        found_samples == 53 ||
+                        found_samples == 54 ||
+                        found_samples == 55 ||
+                        found_samples == 56 ||
+                        found_samples == 57 ||
+                        // found_samples == 0 ||
+                        // found_samples == 1 ||
+                        found_samples == 58 ||
+                        found_samples == 59 ||
+                        found_samples == 60)
+                    {
+                        std::vector<char> dummy(actual_size, 0);
+                        // std::generate(dummy.begin(), dummy.end(), rand);
+                        sample.insert(sample.end(), dummy.begin(), dummy.end());
+                    }
+                    else
+                    {
+                        auto data_from = data.begin() + (offset + 4);
+                        sample.insert(sample.end(), data_from, data_from + actual_size);
+                    }
                 }
                 offset += stsz->sample_size(found_samples);
                 found_samples += 1;
