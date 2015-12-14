@@ -15,7 +15,6 @@ public class NativeInterface {
 
     interface NativeInterfaceListener
     {
-        void onMessage(String message);
         void onInitialized();
     }
 
@@ -26,12 +25,6 @@ public class NativeInterface {
         mListener = listener;
     }
 
-    public static void onMessage(String message)
-    {
-        if (mListener != null)
-            mListener.onMessage(message);
-    }
-
     public static void onInitialized()
     {
         if (mListener != null)
@@ -39,8 +32,10 @@ public class NativeInterface {
     }
 
     public static native void nativeInitialize(String mp4_file);
-    public static native byte[] getSample(int index);
-    public static native byte[] getPPS();
-    public static native byte[] getSPS();
-    public static native void nativeFinalize();
+    public static native byte[] getVideoSample(int index);
+    public static native byte[] getAudioSample(int index);
+    public static native byte[] getVideoPPS();
+    public static native byte[] getVideoSPS();
+    public static native int getAudioSampleRate();
+    public static native int getAudioChannelCount();
 }

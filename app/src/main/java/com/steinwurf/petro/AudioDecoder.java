@@ -3,6 +3,7 @@ package com.steinwurf.petro;
 import android.media.MediaCodec;
 import android.media.MediaCodec.BufferInfo;
 import android.media.MediaFormat;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Surface;
 
@@ -12,29 +13,28 @@ import java.nio.ByteBuffer;
 /**
  * Created by jpihl on 11/27/15.
  */
-public class VideoDecoder extends Thread {
+public class AudioDecoder extends Thread {
 
-    private static final String TAG = "VideoDecoder";
-    private static final String MIME = "video/avc";
-    private static final int WIDTH = 854;
-    private static final int HEIGHT = 480;
+    private static final String TAG = "AudioDecoder";
+    private static final String MIME = "audio/mp4a-latm";
 
     private MediaCodec mDecoder;
 
     private boolean mEosReceived;
 
-    public boolean init(Surface surface, byte[] sps, byte[] pps)
+    public boolean init(int sampleRate, int channelCount)
     {
         try {
             mDecoder = MediaCodec.createDecoderByType(MIME);
-            MediaFormat format = MediaFormat.createVideoFormat(MIME, WIDTH, HEIGHT);
+            MediaFormat format = new MediaFormat();
 
-            format.setByteBuffer("csd-0", ByteBuffer.wrap(sps));
-            format.setByteBuffer("csd-1", ByteBuffer.wrap(pps));
-            format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, HEIGHT * WIDTH);
-            format.setInteger("durationUs", Integer.MAX_VALUE);
+            format.setString(MediaFormat.KEY_MIME, MIME);
 
-            mDecoder.configure(format, surface, null, 0 /* Decoder */);
+            format.setInteger(MediaFormat.KEY_SAMPLE_RATE, 44100);
+            format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, 2);
+            format.setInteger(MediaFormat.KEY_IS_ADTS, 1);
+
+            mDecoder.configure(format, null, null, 0 /* Decoder */);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -49,12 +49,14 @@ public class VideoDecoder extends Thread {
         BufferInfo info = new BufferInfo();
         long startMs = System.currentTimeMillis();
         int i = 0;
+
+        Log.d(TAG, "Decoding Started");
         while (!mEosReceived) {
             if (!mEosReceived) {
                 int inIndex = mDecoder.dequeueInputBuffer(1000);
                 if (inIndex >= 0) {
                     ByteBuffer buffer = inputBuffers[inIndex];
-                    byte[] data = NativeInterface.getVideoSample(i % 100);
+                    byte[] data = NativeInterface.getAudioSample(i % 100);
                     i++;
                     buffer.clear();
                     buffer.put(data);
