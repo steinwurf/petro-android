@@ -40,7 +40,91 @@ public class VideoDecoder extends Thread {
         }
         return true;
     }
+    @Override
+    public void run() {
+        mDecoder.start();
+        BufferInfo info = new BufferInfo();
+        ByteBuffer[] inputBuffers = mDecoder.getInputBuffers();
+        mDecoder.getOutputBuffers();
 
+        boolean isInput = true;
+        boolean first = false;
+        long startWhen = 0;
+        long lll =  0;
+        int i = 0;
+        while (!mEosReceived) {
+            if (isInput) {
+                int inputIndex = mDecoder.dequeueInputBuffer(10000);
+                if (inputIndex >= 0) {
+                    // fill inputBuffers[inputBufferIndex] with valid data
+                    ByteBuffer inputBuffer = inputBuffers[inputIndex];
+
+                    byte[] data = NativeInterface.getVideoSample(i % 100);
+                    i++;
+                    inputBuffer.clear();
+                    inputBuffer.put(data);
+                    inputBuffer.clear();
+                    int sampleSize = data.length;
+
+                    if (sampleSize > 0) {
+
+                        lll += NativeInterface.getVideoTimeToSample(i % 100) * 1000;
+                        mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, lll, 0);
+
+                    } else {
+                        Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
+                        mDecoder.queueInputBuffer(inputIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                        isInput = false;
+                    }
+                }
+            }
+
+            int outIndex = mDecoder.dequeueOutputBuffer(info, 10000);
+            switch (outIndex) {
+                case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
+                    Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
+                    mDecoder.getOutputBuffers();
+                    break;
+
+                case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
+                    Log.d(TAG, "INFO_OUTPUT_FORMAT_CHANGED format : " + mDecoder.getOutputFormat());
+                    break;
+
+                case MediaCodec.INFO_TRY_AGAIN_LATER:
+//				Log.d(TAG, "INFO_TRY_AGAIN_LATER");
+                    break;
+
+                default:
+                    if (!first) {
+                        startWhen = System.currentTimeMillis();
+                        first = true;
+                    }
+                    try {
+                        long sleepTime = (info.presentationTimeUs / 1000) - (System.currentTimeMillis() - startWhen);
+                        Log.d(TAG, "info.presentationTimeUs : " + (info.presentationTimeUs / 1000) + " playTime: " + (System.currentTimeMillis() - startWhen) + " sleepTime : " + sleepTime);
+
+                        if (sleepTime > 0)
+                            Thread.sleep(sleepTime);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+
+                    mDecoder.releaseOutputBuffer(outIndex, true /* Surface init */);
+                    break;
+            }
+
+            // All decoded frames have been rendered, we can stop playing now
+            if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
+                break;
+            }
+        }
+
+        mDecoder.stop();
+        mDecoder.release();
+    }
+    /*
     @Override
     public void run() {
         mDecoder.start();
@@ -105,6 +189,7 @@ public class VideoDecoder extends Thread {
         mDecoder.stop();
         mDecoder.release();
     }
+    */
     public void close()
     {
         mEosReceived = true;

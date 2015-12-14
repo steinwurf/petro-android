@@ -151,12 +151,14 @@ extern "C"
             petro::box::moov<petro::parser<
                 petro::box::trak<petro::parser<
                     petro::box::mdia<petro::parser<
+                        petro::box::mdhd,
                         petro::box::hdlr,
                         petro::box::minf<petro::parser<
                             petro::box::stbl<petro::parser<
                                 petro::box::stco,
                                 petro::box::stsc,
                                 petro::box::stsd,
+                                petro::box::stts,
                                 petro::box::stsz
                             >>
                         >>
@@ -216,6 +218,29 @@ extern "C"
         auto jpps = env->NewByteArray(sps_buffer.size());
         env->SetByteArrayRegion(jpps, 0, sps_buffer.size(), (const jbyte*)sps_buffer.data());
         return jpps;
+    }
+
+    jint Java_com_steinwurf_petro_NativeInterface_getVideoTimeToSample(
+        JNIEnv* env, jobject thiz, jint index)
+    {
+        (void)thiz;
+        LOGI << "Java_com_steinwurf_petro_NativeInterface_getVideoSampleTime";
+
+        auto avc1 = get_native_context(env)->root->get_child("avc1");
+        assert(avc1 != nullptr);
+
+        auto trak = avc1->get_parent("trak");
+        assert(trak != nullptr);
+
+        auto mdhd = std::dynamic_pointer_cast<const petro::box::mdhd>(
+            trak->get_child("mdhd"));
+        assert(mdhd != nullptr);
+
+        auto stts = std::dynamic_pointer_cast<const petro::box::stts>(
+            trak->get_child("stts"));
+        assert(stts != nullptr);
+
+        return stts->sample_delta(index) * mdhd->timescale();
     }
 
     jbyteArray Java_com_steinwurf_petro_NativeInterface_getVideoSample(

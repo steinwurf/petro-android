@@ -36,6 +36,7 @@ public class NativeInterface {
     public static native byte[] getAudioSample(int index);
     public static native byte[] getVideoPPS();
     public static native byte[] getVideoSPS();
+    public static native int getVideoTimeToSample(int index);
     public static native int getAudioSampleRate();
     public static native int getAudioChannelCount();
 }
