@@ -33,118 +33,167 @@ import android.util.Log;
  * @author taehwan
  *
  */
-public class AudioDecoder  extends Thread {
-    private static final int TIMEOUT_US = 10000;
-    private static final String TAG = "AudioDecoder";
+public class AudioExtractorDecoder extends Thread {
+    private static final int TIMEOUT_US = 1000;
+    private static final String TAG = "AudioExtractorDecoder";
+    private MediaExtractor mExtractor;
     private MediaCodec mDecoder;
 
-    private boolean mEosReceived;
+    private boolean eosReceived;
     private int mSampleRate = 0;
 
-    public boolean init(int audioProfile, int sampleRateIndex,
-                        int channelConfig) {
-        Log.d(TAG, "init(" + audioProfile + ", " + sampleRateIndex + ", " + channelConfig + ")");
-        mEosReceived = false;
+    public boolean init(String path) {
+        eosReceived = false;
+        mExtractor = new MediaExtractor();
+        try {
+            mExtractor.setDataSource(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        int channel = 0;
+        for (int i = 0; i < mExtractor.getTrackCount(); i++) {
+            MediaFormat format = mExtractor.getTrackFormat(i);
+            String mime = format.getString(MediaFormat.KEY_MIME);
+            if (mime.startsWith("audio/")) {
+                mExtractor.selectTrack(i);
+                Log.d(TAG, "format : " + format);
+
+                mSampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
+                channel = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
+                break;
+            }
+        }
+        MediaFormat format = makeAACCodecSpecificData(MediaCodecInfo.CodecProfileLevel.AACObjectLC, mSampleRate, channel);
+        if (format == null)
+            return false;
 
         try {
             mDecoder = MediaCodec.createDecoderByType("audio/mp4a-latm");
         } catch (IOException e) {
             e.printStackTrace();
         }
-        mSampleRate = new int[]{
-                96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050,
-                16000, 12000, 11025, 8000}[sampleRateIndex];
-
-        MediaFormat format = new MediaFormat();
-        format.setString(MediaFormat.KEY_MIME, "audio/mp4a-latm");
-        format.setInteger(MediaFormat.KEY_SAMPLE_RATE, mSampleRate);
-        format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, channelConfig);
-        //format.setInteger(MediaFormat.KEY_IS_ADTS, 1);
-
-        ByteBuffer csd = ByteBuffer.allocate(2);
-        csd.put((byte) ((audioProfile << 3) | (sampleRateIndex >> 1)));
-
-        csd.position(1);
-        csd.put((byte) ((byte) ((sampleRateIndex << 7) & 0x80) | (channelConfig << 3)));
-        csd.flip();
-        format.setByteBuffer("csd-0", csd); // add csd-0
-
-        if (format == null) {
-            Log.e(TAG, "Can't create format!");
-            return false;
-        }
-
         mDecoder.configure(format, null, null, 0);
 
         if (mDecoder == null) {
-            Log.e(TAG, "Can't find audio info!");
+            Log.e("DecodeActivity", "Can't find video info!");
             return false;
         }
+
+        mDecoder.start();
+
         return true;
     }
 
+    /**
+     * The code profile, Sample rate, channel Count is used to
+     * produce the AAC Codec SpecificData.
+     * Android 4.4.2/frameworks/av/media/libstagefright/avc_utils.cpp refer
+     * to the portion of the code written.
+     *
+     * MPEG-4 Audio refer : http://wiki.multimedia.cx/index.php?title=MPEG-4_Audio#Audio_Specific_Config
+     *
+     * @param audioProfile is MPEG-4 Audio Object Types
+     * @param sampleRate
+     * @param channelConfig
+     * @return MediaFormat
+     */
+    private MediaFormat makeAACCodecSpecificData(int audioProfile, int sampleRate, int channelConfig) {
+        MediaFormat format = new MediaFormat();
+        format.setString(MediaFormat.KEY_MIME, "audio/mp4a-latm");
+        format.setInteger(MediaFormat.KEY_SAMPLE_RATE, sampleRate);
+        format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, channelConfig);
+
+        int samplingFreq[] = {
+                96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050,
+                16000, 12000, 11025, 8000
+        };
+
+        // Search the Sampling Frequencies
+        int sampleIndex = -1;
+        for (int i = 0; i < samplingFreq.length; ++i) {
+            if (samplingFreq[i] == sampleRate) {
+                sampleIndex = i;
+            }
+        }
+
+        if (sampleIndex == -1) {
+            return null;
+        }
+
+        ByteBuffer csd = ByteBuffer.allocate(2);
+        csd.put((byte) ((audioProfile << 3) | (sampleIndex >> 1)));
+
+        csd.position(1);
+        csd.put((byte) ((byte) ((sampleIndex << 7) & 0x80) | (channelConfig << 3)));
+        csd.flip();
+        format.setByteBuffer("csd-0", csd); // add csd-0
+
+        for (int k = 0; k < csd.capacity(); ++k) {
+            Log.e(TAG, "csd : " + csd.array()[k]);
+        }
+
+        return format;
+    }
+
+    /**
+     * After decoding AAC, Play using Audio Track.
+     */
     @Override
     public void run() {
-
-        mDecoder.start();
         ByteBuffer[] inputBuffers = mDecoder.getInputBuffers();
         ByteBuffer[] outputBuffers = mDecoder.getOutputBuffers();
 
         BufferInfo info = new BufferInfo();
 
+        int buffsize = AudioTrack.getMinBufferSize(mSampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
         // create an audiotrack object
         AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, mSampleRate,
                 AudioFormat.CHANNEL_OUT_STEREO,
                 AudioFormat.ENCODING_PCM_16BIT,
-                AudioTrack.getMinBufferSize(mSampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT),
+                buffsize,
                 AudioTrack.MODE_STREAM);
         audioTrack.play();
 
-        long sampleTime =  0;
-        int i = 0;
-        while (!mEosReceived) {
+        while (!eosReceived) {
             int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
             if (inputIndex >= 0) {
-                ByteBuffer inputBuffer = inputBuffers[inputIndex];
-                int sampleIndex = i % NativeInterface.getAudioSampleCount();
-                byte[] data = NativeInterface.getAudioSample(sampleIndex);
-                i++;
-                inputBuffer.clear();
-                inputBuffer.put(data);
-                inputBuffer.clear();
-                int sampleSize = data.length;
+                ByteBuffer buffer = inputBuffers[inputIndex];
+                int sampleSize = mExtractor.readSampleData(buffer, 0);
                 if (sampleSize < 0) {
                     // We shouldn't stop the playback at this point, just pass the EOS
                     // flag to mDecoder, we will get it again from the
                     // dequeueOutputBuffer
-                    Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
+                    Log.d("DecodeActivity", "InputBuffer BUFFER_FLAG_END_OF_STREAM");
                     mDecoder.queueInputBuffer(inputIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
 
                 } else {
-
-                    sampleTime += 10000;//NativeInterface.getAudioTimeToSample(sampleIndex) * 1000;
+                    long sampleTime = mExtractor.getSampleTime();
+                    Log.d(TAG, "SampleTime: " + sampleTime);
                     mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
+                    mExtractor.advance();
                 }
 
                 int outIndex = mDecoder.dequeueOutputBuffer(info, TIMEOUT_US);
                 switch (outIndex) {
                     case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                        Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
+                        Log.d("DecodeActivity", "INFO_OUTPUT_BUFFERS_CHANGED");
                         outputBuffers = mDecoder.getOutputBuffers();
                         break;
 
                     case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
                         MediaFormat format = mDecoder.getOutputFormat();
-                        Log.d(TAG, "New format " + format);
+                        Log.d("DecodeActivity", "New format " + format);
                         audioTrack.setPlaybackRate(format.getInteger(MediaFormat.KEY_SAMPLE_RATE));
+
                         break;
                     case MediaCodec.INFO_TRY_AGAIN_LATER:
-                        Log.d(TAG, "dequeueOutputBuffer timed out!");
+                        Log.d("DecodeActivity", "dequeueOutputBuffer timed out!");
                         break;
 
                     default:
                         ByteBuffer outBuffer = outputBuffers[outIndex];
-                        Log.v(TAG, "We can't use this buffer but render it due to the API limit, " + outBuffer);
+                        Log.v("DecodeActivity", "We can't use this buffer but render it due to the API limit, " + outBuffer);
 
                         final byte[] chunk = new byte[info.size];
                         outBuffer.get(chunk); // Read the buffer all at once
@@ -157,7 +206,7 @@ public class AudioDecoder  extends Thread {
 
                 // All decoded frames have been rendered, we can stop playing now
                 if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                    Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
+                    Log.d("DecodeActivity", "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
                     break;
                 }
             }
@@ -167,13 +216,16 @@ public class AudioDecoder  extends Thread {
         mDecoder.release();
         mDecoder = null;
 
+        mExtractor.release();
+        mExtractor = null;
+
         audioTrack.stop();
         audioTrack.release();
+        audioTrack = null;
     }
 
-    public void close()
-    {
-        mEosReceived = true;
+    public void close() {
+        eosReceived = true;
     }
 
 }

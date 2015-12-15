@@ -1,75 +1,79 @@
 package com.steinwurf.petro;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
 import android.media.MediaCodec;
 import android.media.MediaCodec.BufferInfo;
+import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.util.Log;
 import android.view.Surface;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
-/**
- * Created by jpihl on 11/27/15.
- */
-public class VideoDecoder extends Thread {
-    private static final int TIMEOUT_US = 10000;
-
-    private static final String TAG = "VideoDecoder";
-    private static final String MIME = "video/avc";
-
+public class VideoExtractorDecoder extends Thread {
+    private static final String VIDEO = "video/";
+    private static final String TAG = "VideoExtractorDecoder";
+    private MediaExtractor mExtractor;
     private MediaCodec mDecoder;
 
-    private boolean mEosReceived;
+    private boolean eosReceived;
 
-    public boolean init(Surface surface, byte[] sps, byte[] pps)
-    {
-        int width = NativeInterface.getVideoWidth();
-        int height = NativeInterface.getVideoHeight();
+    public boolean init(Surface surface, String filePath) {
+        eosReceived = false;
         try {
-            mDecoder = MediaCodec.createDecoderByType(MIME);
-            MediaFormat format = MediaFormat.createVideoFormat(MIME, width, height);
+            mExtractor = new MediaExtractor();
+            mExtractor.setDataSource(filePath);
 
-            format.setByteBuffer("csd-0", ByteBuffer.wrap(sps));
-            format.setByteBuffer("csd-1", ByteBuffer.wrap(pps));
-            format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
-            format.setInteger("durationUs", Integer.MAX_VALUE);
+            for (int i = 0; i < mExtractor.getTrackCount(); i++) {
+                MediaFormat format = mExtractor.getTrackFormat(i);
 
-            mDecoder.configure(format, surface, null, 0 /* Decoder */);
+                String mime = format.getString(MediaFormat.KEY_MIME);
+                if (mime.startsWith(VIDEO)) {
+                    mExtractor.selectTrack(i);
+                    mDecoder = MediaCodec.createDecoderByType(mime);
+                    try {
+                        Log.d(TAG, "format : " + format);
+                        mDecoder.configure(format, surface, null, 0 /* Decoder */);
+
+                    } catch (IllegalStateException e) {
+                        Log.e(TAG, "codec '" + mime + "' failed configuration. " + e);
+                        return false;
+                    }
+
+                    mDecoder.start();
+                    break;
+                }
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         return true;
     }
+
     @Override
     public void run() {
-        mDecoder.start();
         BufferInfo info = new BufferInfo();
         ByteBuffer[] inputBuffers = mDecoder.getInputBuffers();
         mDecoder.getOutputBuffers();
 
         boolean isInput = true;
-        boolean first = true;
+        boolean first = false;
         long startWhen = 0;
-        long sampleTime =  0;
-        int i = 0;
-        while (!mEosReceived) {
+
+        while (!eosReceived) {
             if (isInput) {
                 int inputIndex = mDecoder.dequeueInputBuffer(10000);
                 if (inputIndex >= 0) {
                     // fill inputBuffers[inputBufferIndex] with valid data
                     ByteBuffer inputBuffer = inputBuffers[inputIndex];
-                    int sampleIndex = i % NativeInterface.getVideoSampleCount();
-                    byte[] data = NativeInterface.getVideoSample(sampleIndex);
-                    i++;
-                    inputBuffer.clear();
-                    inputBuffer.put(data);
-                    inputBuffer.clear();
-                    int sampleSize = data.length;
 
-                    if (sampleSize > 0) {
+                    int sampleSize = mExtractor.readSampleData(inputBuffer, 0);
 
-                        sampleTime += NativeInterface.getVideoTimeToSample(sampleIndex) * 1000;
+                    if (mExtractor.advance() && sampleSize > 0) {
+                        long sampleTime = mExtractor.getSampleTime();
+                        Log.d(TAG, "SampleTime: " + sampleTime);
                         mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
 
                     } else {
@@ -80,7 +84,7 @@ public class VideoDecoder extends Thread {
                 }
             }
 
-            int outIndex = mDecoder.dequeueOutputBuffer(info, TIMEOUT_US);
+            int outIndex = mDecoder.dequeueOutputBuffer(info, 10000);
             switch (outIndex) {
                 case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
                     Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
@@ -92,13 +96,13 @@ public class VideoDecoder extends Thread {
                     break;
 
                 case MediaCodec.INFO_TRY_AGAIN_LATER:
-    				Log.d(TAG, "INFO_TRY_AGAIN_LATER");
+                    Log.d(TAG, "INFO_TRY_AGAIN_LATER");
                     break;
 
                 default:
-                    if (first) {
+                    if (!first) {
                         startWhen = System.currentTimeMillis();
-                        first = false;
+                        first = true;
                     }
                     try {
                         long sleepTime = (info.presentationTimeUs / 1000) - (System.currentTimeMillis() - startWhen);
@@ -123,10 +127,10 @@ public class VideoDecoder extends Thread {
 
         mDecoder.stop();
         mDecoder.release();
+        mExtractor.release();
     }
 
-    public void close()
-    {
-        mEosReceived = true;
+    public void close() {
+        eosReceived = true;
     }
 }

@@ -3,6 +3,7 @@
     package="com.steinwurf.petro">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
     <application
         android:allowBackup="true"
@@ -19,6 +20,9 @@
         </activity>
         <activity android:name=".VideoActivity" />
         <activity android:name=".AudioActivity" />
+        <activity android:name=".BothActivity" />
+        <activity android:name=".VideoExtractorActivity" />
+        <activity android:name=".AudioExtractorActivity"></activity>
     </application>
 
 </manifest>

@@ -14,6 +14,13 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="Play Video Extractor"
+        android:id="@+id/play_extractor_video_btn"
+        android:textSize="40dp" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="Play Video"
         android:id="@+id/play_video_btn"
         android:textSize="40dp" />
@@ -21,7 +28,19 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="Play Audio Extractor"
+        android:id="@+id/play_extractor_audio_btn"
+        android:textSize="40dp" />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="Play Audio"
         android:id="@+id/play_audio_btn"
+        android:textSize="40dp" />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Play Both"
+        android:id="@+id/play_both_btn"
         android:textSize="40dp" />
 </LinearLayout>

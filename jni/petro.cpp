@@ -132,7 +132,6 @@ extern "C"
 {
 #endif
 
-
     void Java_com_steinwurf_petro_NativeInterface_nativeInitialize(
         JNIEnv* env, jobject thiz, jstring jmp4_file)
     {
@@ -150,6 +149,7 @@ extern "C"
         petro::parser<
             petro::box::moov<petro::parser<
                 petro::box::trak<petro::parser<
+                    petro::box::tkhd,
                     petro::box::mdia<petro::parser<
                         petro::box::mdhd,
                         petro::box::hdlr,
@@ -220,11 +220,10 @@ extern "C"
         return jpps;
     }
 
-    jint Java_com_steinwurf_petro_NativeInterface_getVideoTimeToSample(
-        JNIEnv* env, jobject thiz, jint index)
+    jint Java_com_steinwurf_petro_NativeInterface_getVideoWidth(
+        JNIEnv* env, jobject thiz)
     {
         (void)thiz;
-        LOGI << "Java_com_steinwurf_petro_NativeInterface_getVideoSampleTime";
 
         auto avc1 = get_native_context(env)->root->get_child("avc1");
         assert(avc1 != nullptr);
@@ -232,15 +231,69 @@ extern "C"
         auto trak = avc1->get_parent("trak");
         assert(trak != nullptr);
 
-        auto mdhd = std::dynamic_pointer_cast<const petro::box::mdhd>(
-            trak->get_child("mdhd"));
-        assert(mdhd != nullptr);
+        auto tkhd = std::dynamic_pointer_cast<const petro::box::tkhd>(
+            trak->get_child("tkhd"));
+        assert(tkhd != nullptr);
 
-        auto stts = std::dynamic_pointer_cast<const petro::box::stts>(
-            trak->get_child("stts"));
-        assert(stts != nullptr);
+        return tkhd->width();
+    }
 
-        return stts->sample_delta(index) * mdhd->timescale();
+    jint Java_com_steinwurf_petro_NativeInterface_getVideoHeight(
+        JNIEnv* env, jobject thiz)
+    {
+        (void)thiz;
+
+        auto avc1 = get_native_context(env)->root->get_child("avc1");
+        assert(avc1 != nullptr);
+
+        auto trak = avc1->get_parent("trak");
+        assert(trak != nullptr);
+
+        auto tkhd = std::dynamic_pointer_cast<const petro::box::tkhd>(
+            trak->get_child("tkhd"));
+        assert(tkhd != nullptr);
+
+        return tkhd->height();
+    }
+
+    jint Java_com_steinwurf_petro_NativeInterface_getVideoSampleCount(
+        JNIEnv* env, jobject thiz)
+    {
+        (void)thiz;
+
+        auto avc1 = get_native_context(env)->root->get_child("avc1");
+        assert(avc1 != nullptr);
+
+        auto trak = avc1->get_parent("trak");
+        assert(trak != nullptr);
+
+        auto stsz = std::dynamic_pointer_cast<const petro::box::stsz>(
+            trak->get_child("stsz"));
+        assert(stsz != nullptr);
+
+        return stsz->sample_count();
+    }
+
+    jint Java_com_steinwurf_petro_NativeInterface_getVideoTimeToSample(
+        JNIEnv* env, jobject thiz, jint index)
+    {
+        (void)thiz;
+
+        auto avc1 = get_native_context(env)->root->get_child("avc1");
+        assert(avc1 != nullptr);
+
+        auto trak = avc1->get_parent("trak");
+        assert(trak != nullptr);
+
+        auto stsz = std::dynamic_pointer_cast<const petro::box::stsz>(
+            trak->get_child("stsz"));
+        assert(stsz != nullptr);
+
+        auto tkhd = std::dynamic_pointer_cast<const petro::box::tkhd>(
+            trak->get_child("tkhd"));
+        assert(tkhd != nullptr);
+
+        return tkhd->duration() / stsz->sample_count();
     }
 
     jbyteArray Java_com_steinwurf_petro_NativeInterface_getVideoSample(
@@ -315,6 +368,26 @@ extern "C"
         return jsample;
     }
 
+    jint Java_com_steinwurf_petro_NativeInterface_getAudioCodecProfileLevel(
+        JNIEnv* env, jobject thiz)
+    {
+        (void)thiz;
+
+        auto c = get_native_context(env);
+        auto root = c->root;
+
+        auto mp4a = root->get_child("mp4a");
+        assert(mp4a != nullptr);
+
+        auto esds = std::dynamic_pointer_cast<const petro::box::esds>(
+            mp4a->get_child("esds"));
+        assert(esds != nullptr);
+        auto decoder_config_descriptor =
+            esds->descriptor()->decoder_config_descriptor();
+
+        return decoder_config_descriptor->mpeg_audio_object_type();
+    }
+
     jint Java_com_steinwurf_petro_NativeInterface_getAudioSampleRate(
         JNIEnv* env, jobject thiz)
     {
@@ -353,6 +426,46 @@ extern "C"
             esds->descriptor()->decoder_config_descriptor();
 
         return decoder_config_descriptor->channel_configuration();
+    }
+
+    jint Java_com_steinwurf_petro_NativeInterface_getAudioSampleCount(
+        JNIEnv* env, jobject thiz)
+    {
+        (void)thiz;
+
+        auto mp4a = get_native_context(env)->root->get_child("mp4a");
+        assert(mp4a != nullptr);
+
+        auto trak = mp4a->get_parent("trak");
+        assert(trak != nullptr);
+
+        auto stsz = std::dynamic_pointer_cast<const petro::box::stsz>(
+            trak->get_child("stsz"));
+        assert(stsz != nullptr);
+
+        return stsz->sample_count();
+    }
+
+    jint Java_com_steinwurf_petro_NativeInterface_getAudioTimeToSample(
+        JNIEnv* env, jobject thiz, jint index)
+    {
+        (void)thiz;
+
+        auto avc1 = get_native_context(env)->root->get_child("mp4a");
+        assert(avc1 != nullptr);
+
+        auto trak = avc1->get_parent("trak");
+        assert(trak != nullptr);
+
+        auto stsz = std::dynamic_pointer_cast<const petro::box::stsz>(
+            trak->get_child("stsz"));
+        assert(stsz != nullptr);
+
+        auto tkhd = std::dynamic_pointer_cast<const petro::box::tkhd>(
+            trak->get_child("tkhd"));
+        assert(tkhd != nullptr);
+
+        return tkhd->duration() / stsz->sample_count();
     }
 
     jbyteArray Java_com_steinwurf_petro_NativeInterface_getAudioSample(
@@ -409,14 +522,14 @@ extern "C"
                             decoder_config_descriptor->channel_configuration(),
                             decoder_config_descriptor->frequency_index(),
                             decoder_config_descriptor->mpeg_audio_object_type());
-                        sample.insert(sample.begin(), adts.begin(), adts.end());
+                        // sample.insert(sample.begin(), adts.begin(), adts.end());
 
                         mp4_file.seekg(offset);
 
                         std::vector<char> temp(sample_size);
                         mp4_file.read(temp.data(), sample_size);
 
-                        sample.insert(sample.end(), temp.data(), temp.data() + (sample_size + 4));
+                        sample.insert(sample.end(), temp.begin(), temp.end());
                         break;
                     }
                     offset += sample_size;

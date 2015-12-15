@@ -19,18 +19,17 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-public class AudioActivity extends AppCompatActivity implements NativeInterface.NativeInterfaceListener {
+public class AudioExtractorActivity extends AppCompatActivity {
 
     private static final String TAG = "AudioActivity";
     private static final String MP4_FILE = Environment.getExternalStorageDirectory() + "/bunny.mp4";
 
-    private AudioDecoder mAudioDecoder;
+    private AudioExtractorDecoder mAudioDecoder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        NativeInterface.setNativeInterfaceListener(this);
         Log.d(TAG, MP4_FILE);
         File file = new File(MP4_FILE);
         if(file.exists()) {
@@ -41,24 +40,10 @@ public class AudioActivity extends AppCompatActivity implements NativeInterface.
             Log.d(TAG, "file does not exists");
         }
 
-        mAudioDecoder = new AudioDecoder();
-        NativeInterface.nativeInitialize(MP4_FILE);
-    }
+        mAudioDecoder = new AudioExtractorDecoder();
+        mAudioDecoder.init(MP4_FILE);
+        mAudioDecoder.start();
 
-    @Override
-    public void onInitialized() {
-        Log.d(TAG, "initialized");
-        if (mAudioDecoder != null) {
-            if (mAudioDecoder.init(
-                    NativeInterface.getAudioCodecProfileLevel(),
-                    NativeInterface.getAudioSampleRate(),
-                    NativeInterface.getAudioChannelCount()))
-            {
-                mAudioDecoder.start();
-            } else {
-                mAudioDecoder = null;
-            }
-        }
     }
 
     @Override

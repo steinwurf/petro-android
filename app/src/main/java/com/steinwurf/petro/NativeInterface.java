@@ -32,11 +32,19 @@ public class NativeInterface {
     }
 
     public static native void nativeInitialize(String mp4_file);
+
     public static native byte[] getVideoSample(int index);
-    public static native byte[] getAudioSample(int index);
+    public static native int getVideoSampleCount();
+    public static native int getVideoTimeToSample(int index);
+    public static native int getVideoWidth();
+    public static native int getVideoHeight();
     public static native byte[] getVideoPPS();
     public static native byte[] getVideoSPS();
-    public static native int getVideoTimeToSample(int index);
+
+    public static native byte[] getAudioSample(int index);
+    public static native int getAudioSampleCount();
+    public static native int getAudioTimeToSample(int index);
     public static native int getAudioSampleRate();
     public static native int getAudioChannelCount();
+    public static native int getAudioCodecProfileLevel();
 }

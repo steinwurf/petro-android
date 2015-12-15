@@ -19,6 +19,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         verifyStoragePermissions(this);
 
+        findViewById(R.id.play_extractor_video_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, VideoExtractorActivity.class);
+                startActivity(intent);
+            }
+        });
         findViewById(R.id.play_video_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -26,10 +33,24 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+        findViewById(R.id.play_extractor_audio_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, AudioExtractorActivity.class);
+                startActivity(intent);
+            }
+        });
         findViewById(R.id.play_audio_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, AudioActivity.class);
+                startActivity(intent);
+            }
+        });
+        findViewById(R.id.play_both_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, BothActivity.class);
                 startActivity(intent);
             }
         });
