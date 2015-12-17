@@ -82,8 +82,7 @@ public class AudioDecoder  extends Thread {
             if (inputIndex >= 0) {
                 // fill inputBuffers[inputBufferIndex] with valid data
                 ByteBuffer inputBuffer = inputBuffers[inputIndex];
-                int sampleIndex = i % NativeInterface.getAudioSampleCount();
-                byte[] data = NativeInterface.getAudioSample(sampleIndex);
+                byte[] data = NativeInterface.getAudioSample();
                 i++;
                 inputBuffer.clear();
                 inputBuffer.put(data);

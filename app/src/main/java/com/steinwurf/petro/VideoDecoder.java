@@ -61,8 +61,7 @@ public class VideoDecoder extends Thread {
             if (inputIndex >= 0) {
                 // fill inputBuffers[inputBufferIndex] with valid data
                 ByteBuffer inputBuffer = inputBuffers[inputIndex];
-                int sampleIndex = i % NativeInterface.getVideoSampleCount();
-                byte[] data = NativeInterface.getVideoSample(sampleIndex);
+                byte[] data = NativeInterface.getVideoSample();
                 i++;
                 inputBuffer.clear();
                 inputBuffer.put(data);

@@ -33,6 +33,8 @@ struct context
 {
     std::shared_ptr<petro::box::root> root;
     std::string mp4_file;
+    uint64_t video_sample;
+    uint64_t audio_sample;
 };
 
 static uint32_t read_sample_size(std::istream& file)
@@ -123,6 +125,8 @@ extern "C"
         parser.read(root, bs);
 
         c->root = root;
+        c->video_sample = 0;
+        c->audio_sample = 0;
         set_native_context(env, c);
 
         env->CallStaticVoidMethod(native_interface_class, on_initialized_method);
@@ -206,24 +210,6 @@ extern "C"
         return tkhd->height();
     }
 
-    jint Java_com_steinwurf_petro_NativeInterface_getVideoSampleCount(
-        JNIEnv* env, jobject thiz)
-    {
-        (void)thiz;
-
-        auto avc1 = get_native_context(env)->root->get_child("avc1");
-        assert(avc1 != nullptr);
-
-        auto trak = avc1->get_parent("trak");
-        assert(trak != nullptr);
-
-        auto stsz = std::dynamic_pointer_cast<const petro::box::stsz>(
-            trak->get_child("stsz"));
-        assert(stsz != nullptr);
-
-        return stsz->sample_count();
-    }
-
     jint Java_com_steinwurf_petro_NativeInterface_getVideoSampleTime(
         JNIEnv* env, jobject thiz)
     {
@@ -247,7 +233,7 @@ extern "C"
     }
 
     jbyteArray Java_com_steinwurf_petro_NativeInterface_getVideoSample(
-        JNIEnv* env, jobject thiz, jint index)
+        JNIEnv* env, jobject thiz)
     {
         (void)thiz;
 
@@ -258,6 +244,9 @@ extern "C"
         std::ifstream mp4_file(c->mp4_file, std::ios::binary);
 
         auto root = c->root;
+
+        uint64_t index = c->video_sample;
+        c->video_sample++;
 
         // don't handle special case with fragmented samples
         assert(root->get_child("mvex") == nullptr);
@@ -420,7 +409,7 @@ extern "C"
     }
 
     jbyteArray Java_com_steinwurf_petro_NativeInterface_getAudioSample(
-        JNIEnv* env, jobject thiz, jint index)
+        JNIEnv* env, jobject thiz)
     {
         (void)thiz;
 
@@ -429,6 +418,9 @@ extern "C"
         std::ifstream mp4_file(c->mp4_file, std::ios::binary);
 
         auto root = c->root;
+
+        uint64_t index = c->audio_sample;
+        c->audio_sample++;
 
         auto mp4a = root->get_child("mp4a");
         assert(mp4a != nullptr);
