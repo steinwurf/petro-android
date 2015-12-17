@@ -74,6 +74,7 @@ public class AudioDecoder  extends Thread {
 
         mAudioTrack.play();
 
+        long startWhen = System.currentTimeMillis();
         long sampleTime =  0;
         int i = 0;
         while (!mEosReceived) {
@@ -95,49 +96,42 @@ public class AudioDecoder  extends Thread {
                     Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
                     mDecoder.queueInputBuffer(inputIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                 }
-
-
-                int outIndex = mDecoder.dequeueOutputBuffer(info, TIMEOUT_US);
-                switch (outIndex) {
-                    case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                        Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
-                        outputBuffers = mDecoder.getOutputBuffers();
-                        break;
-
-                    case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                        MediaFormat format = mDecoder.getOutputFormat();
-                        Log.d(TAG, "New format " + format);
-                        mAudioTrack.setPlaybackRate(format.getInteger(MediaFormat.KEY_SAMPLE_RATE));
-                        break;
-                    case MediaCodec.INFO_TRY_AGAIN_LATER:
-                        Log.d(TAG, "dequeueOutputBuffer timed out!");
-                        break;
-
-                    default:
-
-                        ByteBuffer outBuffer = outputBuffers[outIndex];
-                        Log.v(TAG, "We can't use this buffer but render it due to the API limit, " + outBuffer);
-
-                        final byte[] chunk = new byte[info.size];
-                        outBuffer.get(chunk); // Read the buffer all at once
-                        outBuffer.clear(); // ** MUST DO!!! OTHERWISE THE NEXT TIME YOU GET THIS SAME BUFFER BAD THINGS WILL HAPPEN
-
-                        mAudioTrack.write(chunk, info.offset, info.offset + info.size); // AudioTrack write data
-                        mDecoder.releaseOutputBuffer(outIndex, false);
-                        break;
-                }
-
-                // All decoded frames have been rendered, we can stop playing now
-                if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                    Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
+            }
+            int outIndex = mDecoder.dequeueOutputBuffer(info, TIMEOUT_US);
+            switch (outIndex) {
+                case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
+                    Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
+                    outputBuffers = mDecoder.getOutputBuffers();
                     break;
-                }
+
+                case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
+                    MediaFormat format = mDecoder.getOutputFormat();
+                    Log.d(TAG, "INFO_OUTPUT_FORMAT_CHANGED format : " + format);
+                    mAudioTrack.setPlaybackRate(format.getInteger(MediaFormat.KEY_SAMPLE_RATE));
+                    break;
+                case MediaCodec.INFO_TRY_AGAIN_LATER:
+                    Log.d(TAG, "INFO_TRY_AGAIN_LATER");
+                    break;
+                default:
+
+                    ByteBuffer outBuffer = outputBuffers[outIndex];
+                    final byte[] chunk = new byte[info.size];
+                    outBuffer.get(chunk);
+                    outBuffer.clear();
+                    mAudioTrack.write(chunk, info.offset, info.offset + info.size);
+                    mDecoder.releaseOutputBuffer(outIndex, false);
+                    break;
+            }
+
+            // All decoded frames have been rendered, we can stop playing now
+            if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
+                break;
             }
         }
 
         mDecoder.stop();
         mDecoder.release();
-        mDecoder = null;
 
         mAudioTrack.stop();
         mAudioTrack.release();

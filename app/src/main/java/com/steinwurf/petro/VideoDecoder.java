@@ -61,7 +61,7 @@ public class VideoDecoder extends Thread {
             if (inputIndex >= 0) {
                 // fill inputBuffers[inputBufferIndex] with valid data
                 ByteBuffer inputBuffer = inputBuffers[inputIndex];
-                int sampleIndex = i % NativeInterface.getAudioSampleCount();
+                int sampleIndex = i % NativeInterface.getVideoSampleCount();
                 byte[] data = NativeInterface.getVideoSample(sampleIndex);
                 i++;
                 inputBuffer.clear();
@@ -71,13 +71,11 @@ public class VideoDecoder extends Thread {
                 if (sampleSize > 0) {
                     sampleTime += NativeInterface.getVideoSampleTime() * 1000;
                     mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
-
                 } else {
                     Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
                     mDecoder.queueInputBuffer(inputIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                 }
             }
-
             int outIndex = mDecoder.dequeueOutputBuffer(info, TIMEOUT_US);
             switch (outIndex) {
                 case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
@@ -86,13 +84,13 @@ public class VideoDecoder extends Thread {
                     break;
 
                 case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                    Log.d(TAG, "INFO_OUTPUT_FORMAT_CHANGED format : " + mDecoder.getOutputFormat());
+                    MediaFormat format = mDecoder.getOutputFormat();
+                    Log.d(TAG, "INFO_OUTPUT_FORMAT_CHANGED format : " + format);
                     break;
 
                 case MediaCodec.INFO_TRY_AGAIN_LATER:
     				Log.d(TAG, "INFO_TRY_AGAIN_LATER");
                     break;
-
                 default:
                     try {
                         long sleepTime = (info.presentationTimeUs / 1000) - (System.currentTimeMillis() - startWhen);
