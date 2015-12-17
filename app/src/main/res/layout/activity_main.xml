@@ -9,38 +9,38 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.steinwurf.petro.MainActivity"
     android:orientation="vertical"
-    android:gravity="center">
+    android:gravity="top|center">
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Play Video Extractor"
-        android:id="@+id/play_extractor_video_btn"
-        android:textSize="40dp" />
+        android:id="@+id/play_extractor_video_btn" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Play Video"
-        android:id="@+id/play_video_btn"
-        android:textSize="40dp" />
+        android:id="@+id/play_video_btn" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Play Audio Extractor"
-        android:id="@+id/play_extractor_audio_btn"
-        android:textSize="40dp" />
+        android:id="@+id/play_extractor_audio_btn" />
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Play Audio"
-        android:id="@+id/play_audio_btn"
-        android:textSize="40dp" />
+        android:id="@+id/play_audio_btn" />
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Play Both"
-        android:id="@+id/play_both_btn"
-        android:textSize="40dp" />
+        android:id="@+id/play_both_btn" />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Play Extractor Both"
+        android:id="@+id/play_extractor_both_btn" />
 </LinearLayout>

@@ -11,7 +11,7 @@ import java.io.File;
 
 public class BothActivity extends AppCompatActivity implements NativeInterface.NativeInterfaceListener, SurfaceHolder.Callback {
 
-    private static final String TAG = "VideoActivity";
+    private static final String TAG = "BothActivity";
     private static final String MP4_FILE = Environment.getExternalStorageDirectory() + "/bunny.mp4";
 
     private VideoDecoder mVideoDecoder;

@@ -9,74 +9,72 @@ import android.view.Surface;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-/**
- * Created by jpihl on 11/27/15.
- */
 public class VideoDecoder extends Thread {
-    private static final int TIMEOUT_US = 10000;
-
     private static final String TAG = "VideoDecoder";
+
+    private static final int TIMEOUT_US = 10000;
     private static final String MIME = "video/avc";
 
     private MediaCodec mDecoder;
 
     private boolean mEosReceived;
 
-    public boolean init(Surface surface, byte[] sps, byte[] pps)
-    {
+    public boolean init(Surface surface, byte[] sps, byte[] pps) {
         int width = NativeInterface.getVideoWidth();
         int height = NativeInterface.getVideoHeight();
+
         try {
             mDecoder = MediaCodec.createDecoderByType(MIME);
-            MediaFormat format = MediaFormat.createVideoFormat(MIME, width, height);
-
-            format.setByteBuffer("csd-0", ByteBuffer.wrap(sps));
-            format.setByteBuffer("csd-1", ByteBuffer.wrap(pps));
-            format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
-            format.setInteger("durationUs", Integer.MAX_VALUE);
-
-            mDecoder.configure(format, surface, null, 0 /* Decoder */);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        MediaFormat format = MediaFormat.createVideoFormat(MIME, width, height);
+
+        if (format == null) {
+            Log.e(TAG, "Can't create format!");
+            return false;
+        }
+
+        format.setByteBuffer("csd-0", ByteBuffer.wrap(sps));
+        format.setByteBuffer("csd-1", ByteBuffer.wrap(pps));
+        format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
+        format.setInteger("durationUs", Integer.MAX_VALUE);
+
+        mDecoder.configure(format, surface, null, 0 /* Decoder */);
+
         return true;
     }
     @Override
     public void run() {
+        mEosReceived = false;
         mDecoder.start();
-        BufferInfo info = new BufferInfo();
         ByteBuffer[] inputBuffers = mDecoder.getInputBuffers();
         mDecoder.getOutputBuffers();
+        BufferInfo info = new BufferInfo();
 
-        boolean isInput = true;
-        boolean first = true;
-        long startWhen = 0;
+        long startWhen = System.currentTimeMillis();
         long sampleTime =  0;
         int i = 0;
         while (!mEosReceived) {
-            if (isInput) {
-                int inputIndex = mDecoder.dequeueInputBuffer(10000);
-                if (inputIndex >= 0) {
-                    // fill inputBuffers[inputBufferIndex] with valid data
-                    ByteBuffer inputBuffer = inputBuffers[inputIndex];
-                    int sampleIndex = i % NativeInterface.getVideoSampleCount();
-                    byte[] data = NativeInterface.getVideoSample(sampleIndex);
-                    i++;
-                    inputBuffer.clear();
-                    inputBuffer.put(data);
-                    inputBuffer.clear();
-                    int sampleSize = data.length;
+            int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
+            if (inputIndex >= 0) {
+                // fill inputBuffers[inputBufferIndex] with valid data
+                ByteBuffer inputBuffer = inputBuffers[inputIndex];
+                int sampleIndex = i % NativeInterface.getAudioSampleCount();
+                byte[] data = NativeInterface.getVideoSample(sampleIndex);
+                i++;
+                inputBuffer.clear();
+                inputBuffer.put(data);
+                inputBuffer.clear();
+                int sampleSize = data.length;
+                if (sampleSize > 0) {
+                    sampleTime += NativeInterface.getVideoSampleTime() * 1000;
+                    mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
 
-                    if (sampleSize > 0) {
-
-                        sampleTime += NativeInterface.getVideoTimeToSample(sampleIndex) * 1000;
-                        mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
-
-                    } else {
-                        Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
-                        mDecoder.queueInputBuffer(inputIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                        isInput = false;
-                    }
+                } else {
+                    Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
+                    mDecoder.queueInputBuffer(inputIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                 }
             }
 
@@ -96,10 +94,6 @@ public class VideoDecoder extends Thread {
                     break;
 
                 default:
-                    if (first) {
-                        startWhen = System.currentTimeMillis();
-                        first = false;
-                    }
                     try {
                         long sleepTime = (info.presentationTimeUs / 1000) - (System.currentTimeMillis() - startWhen);
                         Log.d(TAG, "info.presentationTimeUs : " + (info.presentationTimeUs / 1000) + " playTime: " + (System.currentTimeMillis() - startWhen) + " sleepTime : " + sleepTime);
@@ -110,7 +104,7 @@ public class VideoDecoder extends Thread {
                         e.printStackTrace();
                     }
 
-                    mDecoder.releaseOutputBuffer(outIndex, true /* Surface init */);
+                    mDecoder.releaseOutputBuffer(outIndex, true);
                     break;
             }
 

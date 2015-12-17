@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <cstdlib>
+#include <chrono>
 
 #include <petro/byte_stream.hpp>
 #include <petro/box/all.hpp>
@@ -33,57 +34,6 @@ struct context
     std::shared_ptr<petro::box::root> root;
     std::string mp4_file;
 };
-
-static std::vector<uint8_t> create_adts(
-    uint16_t aac_frame_length,
-    uint8_t channel_configuration,
-    uint8_t frequency_index,
-    uint8_t mpeg_audio_object_type,
-    uint8_t number_of_raw_data_blocks = 1)
-{
-    uint8_t protection_absent = 1;
-    uint8_t mpeg_version = 0;
-
-    std::vector<uint8_t> adts;
-
-    uint8_t byte1 = 0xFF;
-    adts.push_back(byte1);
-
-    uint8_t byte2 = 0xF0;
-    byte2 |= mpeg_version << 3;
-    byte2 |= protection_absent << 0;
-
-    adts.push_back(byte2);
-
-    uint8_t byte3 = 0x00;
-    byte3 |= (mpeg_audio_object_type - 1) << 6;
-    byte3 |= frequency_index << 2;
-
-    byte3 |= (channel_configuration & 0x04) >> 2;
-    adts.push_back(byte3);
-
-    uint8_t byte4 = 0;
-
-    byte4 |= (channel_configuration & 0x03) << 6;
-    // frame length, this value must include the 7 bytes of header length
-    uint16_t frame_length = aac_frame_length + 7;
-    assert(frame_length <= 0x1FFF);
-    byte4 |= (frame_length & 0x1800) >> 11;
-
-    adts.push_back(byte4);
-
-    adts.push_back((frame_length & 0x07F8) >> 3); // byte5
-
-    uint8_t byte6 = 0xFF;
-    byte6 &= (frame_length & 0x0007) << 5;
-    adts.push_back(byte6);
-
-    uint8_t byte7 = 0xB0;
-    byte7 |= (number_of_raw_data_blocks - 1) & 0x03;
-    adts.push_back(byte7);
-
-    return adts;
-}
 
 static uint32_t read_sample_size(std::istream& file)
 {
@@ -274,8 +224,8 @@ extern "C"
         return stsz->sample_count();
     }
 
-    jint Java_com_steinwurf_petro_NativeInterface_getVideoTimeToSample(
-        JNIEnv* env, jobject thiz, jint index)
+    jint Java_com_steinwurf_petro_NativeInterface_getVideoSampleTime(
+        JNIEnv* env, jobject thiz)
     {
         (void)thiz;
 
@@ -348,9 +298,10 @@ extern "C"
                         auto sample_size = read_sample_size(mp4_file);
 
                         std::vector<char> temp(sample_size);
+
                         mp4_file.read(temp.data(), sample_size);
 
-                        sample.insert(sample.end(), temp.data(), temp.data() + (sample_size + 4));
+                        sample.insert(sample.end(), temp.data(), temp.data() + (sample_size + nalu_seperator.size()));
                         break;
                     }
                     offset += stsz->sample_size(found_samples);
@@ -446,8 +397,8 @@ extern "C"
         return stsz->sample_count();
     }
 
-    jint Java_com_steinwurf_petro_NativeInterface_getAudioTimeToSample(
-        JNIEnv* env, jobject thiz, jint index)
+    jint Java_com_steinwurf_petro_NativeInterface_getAudioSampleTime(
+        JNIEnv* env, jobject thiz)
     {
         (void)thiz;
 
@@ -517,13 +468,6 @@ extern "C"
                     uint16_t sample_size = stsz->sample_size(found_samples);
                     if (found_samples == index)
                     {
-                        auto adts = create_adts(
-                            sample_size,
-                            decoder_config_descriptor->channel_configuration(),
-                            decoder_config_descriptor->frequency_index(),
-                            decoder_config_descriptor->mpeg_audio_object_type());
-                        // sample.insert(sample.begin(), adts.begin(), adts.end());
-
                         mp4_file.seekg(offset);
 
                         std::vector<char> temp(sample_size);

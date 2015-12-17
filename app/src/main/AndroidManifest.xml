@@ -22,7 +22,8 @@
         <activity android:name=".AudioActivity" />
         <activity android:name=".BothActivity" />
         <activity android:name=".VideoExtractorActivity" />
-        <activity android:name=".AudioExtractorActivity"></activity>
+        <activity android:name=".AudioExtractorActivity" />
+        <activity android:name=".BothExtractorActivity"></activity>
     </application>
 
 </manifest>

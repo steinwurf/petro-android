@@ -21,7 +21,7 @@ import java.util.ArrayList;
 
 public class AudioExtractorActivity extends AppCompatActivity {
 
-    private static final String TAG = "AudioActivity";
+    private static final String TAG = "AudioExtractorActivity";
     private static final String MP4_FILE = Environment.getExternalStorageDirectory() + "/bunny.mp4";
 
     private AudioExtractorDecoder mAudioDecoder;

@@ -34,6 +34,7 @@ import android.util.Log;
  *
  */
 public class AudioExtractorDecoder extends Thread {
+    private static final String AUDIO = "audio/";
     private static final int TIMEOUT_US = 1000;
     private static final String TAG = "AudioExtractorDecoder";
     private MediaExtractor mExtractor;
@@ -55,7 +56,7 @@ public class AudioExtractorDecoder extends Thread {
         for (int i = 0; i < mExtractor.getTrackCount(); i++) {
             MediaFormat format = mExtractor.getTrackFormat(i);
             String mime = format.getString(MediaFormat.KEY_MIME);
-            if (mime.startsWith("audio/")) {
+            if (mime.startsWith(AUDIO)) {
                 mExtractor.selectTrack(i);
                 Log.d(TAG, "format : " + format);
 
@@ -79,8 +80,6 @@ public class AudioExtractorDecoder extends Thread {
             Log.e("DecodeActivity", "Can't find video info!");
             return false;
         }
-
-        mDecoder.start();
 
         return true;
     }
@@ -141,6 +140,7 @@ public class AudioExtractorDecoder extends Thread {
      */
     @Override
     public void run() {
+        mDecoder.start();
         ByteBuffer[] inputBuffers = mDecoder.getInputBuffers();
         ByteBuffer[] outputBuffers = mDecoder.getOutputBuffers();
 
