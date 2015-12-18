@@ -38,9 +38,4 @@
         android:layout_height="wrap_content"
         android:text="Play Both"
         android:id="@+id/play_both_btn" />
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Play Extractor Both"
-        android:id="@+id/play_extractor_both_btn" />
 </LinearLayout>

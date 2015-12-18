@@ -67,5 +67,6 @@ public class AudioActivity extends AppCompatActivity implements NativeInterface.
         if (mAudioDecoder != null) {
             mAudioDecoder.close();
         }
+        NativeInterface.nativeFinalize();
     }
 }

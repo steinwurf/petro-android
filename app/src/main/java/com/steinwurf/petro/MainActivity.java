@@ -55,13 +55,6 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-        findViewById(R.id.play_extractor_both_btn).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, BothExtractorActivity.class);
-                startActivity(intent);
-            }
-        });
     }
 
     // Storage Permissions

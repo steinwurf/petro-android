@@ -32,6 +32,7 @@ public class NativeInterface {
     }
 
     public static native void nativeInitialize(String mp4_file);
+    public static native void nativeFinalize();
 
     public static native byte[] getVideoSample();
     public static native int getVideoSampleTime();

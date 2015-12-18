@@ -69,4 +69,10 @@ public class VideoActivity extends AppCompatActivity implements NativeInterface.
             mVideoDecoder.close();
         }
     }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        NativeInterface.nativeFinalize();
+    }
 }

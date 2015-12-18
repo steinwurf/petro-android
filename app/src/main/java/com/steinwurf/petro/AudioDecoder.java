@@ -74,7 +74,6 @@ public class AudioDecoder  extends Thread {
 
         mAudioTrack.play();
 
-        long startWhen = System.currentTimeMillis();
         long sampleTime =  0;
         int i = 0;
         while (!mEosReceived) {

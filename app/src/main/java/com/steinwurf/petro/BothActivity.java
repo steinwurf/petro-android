@@ -80,4 +80,10 @@ public class BothActivity extends AppCompatActivity implements NativeInterface.N
             mAudioDecoder.close();
         }
     }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        NativeInterface.nativeFinalize();
+    }
 }
