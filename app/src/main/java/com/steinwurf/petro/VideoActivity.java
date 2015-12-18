@@ -53,8 +53,8 @@ public class VideoActivity extends AppCompatActivity implements NativeInterface.
         if (mVideoDecoder != null) {
             if (mVideoDecoder.init(
                     holder.getSurface(),
-                    NativeInterface.getVideoSPS(),
-                    NativeInterface.getVideoPPS()))
+                    NativeInterface.getSPS(),
+                    NativeInterface.getPPS()))
             {
                 mVideoDecoder.start();
             } else {

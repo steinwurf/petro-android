@@ -55,8 +55,8 @@ public class BothActivity extends AppCompatActivity implements NativeInterface.N
         if (mVideoDecoder != null && mAudioDecoder != null) {
             if (mVideoDecoder.init(
                     holder.getSurface(),
-                    NativeInterface.getVideoSPS(),
-                    NativeInterface.getVideoPPS()) &&
+                    NativeInterface.getSPS(),
+                    NativeInterface.getPPS()) &&
                 mAudioDecoder.init(
                     NativeInterface.getAudioCodecProfileLevel(),
                     NativeInterface.getAudioSampleRate(),

@@ -20,8 +20,8 @@ public class VideoDecoder extends Thread {
     private boolean mEosReceived;
 
     public boolean init(Surface surface, byte[] sps, byte[] pps) {
-        int width = NativeInterface.getVideoWidth();
-        int height = NativeInterface.getVideoHeight();
+        int width = NativeInterface.getWidth();
+        int height = NativeInterface.getHeight();
 
         try {
             mDecoder = MediaCodec.createDecoderByType(MIME);
