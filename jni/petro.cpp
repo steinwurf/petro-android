@@ -10,6 +10,7 @@
 
 #include "mp4_video.hpp"
 #include "mp4_audio.hpp"
+#include "c4m_video.hpp"
 
 static JavaVM* java_vm = 0;
 
@@ -68,6 +69,11 @@ extern "C"
 
         auto c = new context();
         c->video = std::make_shared<petro_android::mp4_video>(mp4);
+
+        /// @todo fix again - just for a quick test
+        // c->video = std::make_shared<petro_android::c4m_video>(
+            // "/storage/emulated/0/custom_capture.h264");
+
         c->audio = std::make_shared<petro_android::mp4_audio>(mp4);
         set_native_context(env, c);
 

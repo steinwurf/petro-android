@@ -120,6 +120,10 @@ def resolve(ctx):
         git_repository='github.com/steinwurf/petro.git',
         major=1))
 
+    ctx.add_dependency(resolve.ResolveVersion(
+        name='sak',
+        git_repository='github.com/steinwurf/sak.git',
+        major=15))
 
 def configure(conf):
 

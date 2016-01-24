@@ -6,4 +6,4 @@ bld(features='cxx cxxshlib',
     target='petro_android',
     export_includes=['jni'],
     lib=['android'],
-    use=['petro'])
+    use=['petro', 'sak_includes'])
