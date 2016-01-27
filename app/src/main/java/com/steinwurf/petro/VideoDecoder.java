@@ -65,7 +65,7 @@ public class VideoDecoder extends Thread {
                 i++;
                 inputBuffer.clear();
                 inputBuffer.put(data);
-                inputBuffer.clear();
+
                 int sampleSize = data.length;
                 if (sampleSize > 0) {
                     sampleTime += NativeInterface.getVideoSampleTime() * 1000;
