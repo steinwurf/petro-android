@@ -116,18 +116,25 @@ extern "C"
         return get_native_context(env)->video->height();
     }
 
-    jint Java_com_steinwurf_petro_NativeInterface_getVideoSampleTime(
+    void Java_com_steinwurf_petro_NativeInterface_advanceVideo(
         JNIEnv* env, jobject thiz)
     {
         (void)thiz;
-        return get_native_context(env)->video->sample_time();
+        get_native_context(env)->video->advance();
+    }
+
+    jint Java_com_steinwurf_petro_NativeInterface_getVideoPresentationTime(
+        JNIEnv* env, jobject thiz)
+    {
+        (void)thiz;
+        return get_native_context(env)->video->presentation_time();
     }
 
     jbyteArray Java_com_steinwurf_petro_NativeInterface_getVideoSample(
         JNIEnv* env, jobject thiz)
     {
         (void)thiz;
-        auto sample = get_native_context(env)->video->next_sample();
+        auto sample = get_native_context(env)->video->sample();
         auto jsample = env->NewByteArray(sample.size());
         env->SetByteArrayRegion(jsample, 0, sample.size(), (const jbyte*)sample.data());
         return jsample;
@@ -154,18 +161,25 @@ extern "C"
         return get_native_context(env)->audio->channel_config();
     }
 
-    jint Java_com_steinwurf_petro_NativeInterface_getAudioSampleTime(
+    void Java_com_steinwurf_petro_NativeInterface_advanceAudio(
         JNIEnv* env, jobject thiz)
     {
         (void)thiz;
-        return get_native_context(env)->audio->sample_time();
+        get_native_context(env)->audio->advance();
+    }
+
+    jint Java_com_steinwurf_petro_NativeInterface_getAudioPresentationTime(
+        JNIEnv* env, jobject thiz)
+    {
+        (void)thiz;
+        return get_native_context(env)->audio->presentation_time();
     }
 
     jbyteArray Java_com_steinwurf_petro_NativeInterface_getAudioSample(
         JNIEnv* env, jobject thiz)
     {
         (void)thiz;
-        auto sample = get_native_context(env)->audio->next_sample();
+        auto sample = get_native_context(env)->audio->sample();
 
         auto jsample = env->NewByteArray(sample.size());
         env->SetByteArrayRegion(jsample, 0, sample.size(), (const jbyte*)sample.data());

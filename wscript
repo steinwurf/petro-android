@@ -118,7 +118,7 @@ def resolve(ctx):
     ctx.add_dependency(resolve.ResolveVersion(
         name='petro',
         git_repository='github.com/steinwurf/petro.git',
-        major=1))
+        major=2))
 
     ctx.add_dependency(resolve.ResolveVersion(
         name='sak',

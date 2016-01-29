@@ -79,6 +79,8 @@ public class AudioDecoder  extends Thread {
         while (!mEosReceived) {
             int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
             if (inputIndex >= 0) {
+
+                NativeInterface.advanceAudio();
                 // fill inputBuffers[inputBufferIndex] with valid data
                 ByteBuffer inputBuffer = inputBuffers[inputIndex];
                 byte[] data = NativeInterface.getAudioSample();
@@ -88,7 +90,7 @@ public class AudioDecoder  extends Thread {
                 inputBuffer.clear();
                 int sampleSize = data.length;
                 if (sampleSize > 0) {
-                    sampleTime += NativeInterface.getAudioSampleTime() * 1000;
+                    sampleTime += NativeInterface.getAudioPresentationTime() * 1000;
                     mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
                 } else {
                     Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");

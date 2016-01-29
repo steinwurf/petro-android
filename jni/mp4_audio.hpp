@@ -56,10 +56,35 @@ namespace petro_android
 
             m_trak = mp4a->get_parent("trak");
             assert(m_trak != nullptr);
+
+            auto stsz = std::dynamic_pointer_cast<const petro::box::stsz>(
+                m_trak->get_child("stsz"));
+            assert(stsz != nullptr);
+
+            auto tkhd = std::dynamic_pointer_cast<const petro::box::tkhd>(
+                m_trak->get_child("tkhd"));
+            assert(tkhd != nullptr);
+
+            m_sample_time =
+                tkhd->duration() * 1000 / stsz->sample_count();
         }
 
-        std::vector<char> next_sample()
+        bool advance()
         {
+
+            auto stsz = std::dynamic_pointer_cast<const petro::box::stsz>(
+                m_trak->get_child("stsz"));
+            assert(stsz != nullptr);
+
+
+            if (m_next_sample > stsz->sample_count())
+                return false;
+
+
+            /// @todo fix this to always return the same as android
+            ///       MediaExtractor?
+            m_presentation_time = m_sample_time * m_next_sample;
+
             auto stco = std::dynamic_pointer_cast<const petro::box::stco>(
                 m_trak->get_child("stco"));
             assert(stco != nullptr);
@@ -67,10 +92,6 @@ namespace petro_android
             auto stsc = std::dynamic_pointer_cast<const petro::box::stsc>(
                 m_trak->get_child("stsc"));
             assert(stsc != nullptr);
-
-            auto stsz = std::dynamic_pointer_cast<const petro::box::stsz>(
-                m_trak->get_child("stsz"));
-            assert(stsz != nullptr);
 
             std::ifstream mp4_file(m_file, std::ios::binary);
             std::vector<char> sample;
@@ -105,20 +126,19 @@ namespace petro_android
                     found_samples += samples_for_chunk;
                 }
             }
-            return sample;
+            m_sample = sample;
+
+            return true;
         }
 
-        uint32_t sample_time()
+        std::vector<char> sample() const
         {
-            auto stsz = std::dynamic_pointer_cast<const petro::box::stsz>(
-                m_trak->get_child("stsz"));
-            assert(stsz != nullptr);
+            return m_sample;
+        }
 
-            auto tkhd = std::dynamic_pointer_cast<const petro::box::tkhd>(
-                m_trak->get_child("tkhd"));
-            assert(tkhd != nullptr);
-
-            return tkhd->duration() / stsz->sample_count();
+        uint32_t presentation_time() const
+        {
+            return m_presentation_time;
         }
 
         uint32_t sample_rate_index()
@@ -143,5 +163,8 @@ namespace petro_android
         std::shared_ptr<const petro::descriptor::decoder_config_descriptor>
             m_descriptor;
         std::shared_ptr<const petro::box::box> m_trak;
+        std::vector<char> m_sample;
+        uint32_t m_presentation_time;
+        uint32_t m_sample_time;
     };
 }

@@ -54,21 +54,19 @@ public class VideoDecoder extends Thread {
         BufferInfo info = new BufferInfo();
 
         long startWhen = System.currentTimeMillis();
-        long sampleTime =  0;
-        int i = 0;
         while (!mEosReceived) {
             int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
             if (inputIndex >= 0) {
                 // fill inputBuffers[inputBufferIndex] with valid data
                 ByteBuffer inputBuffer = inputBuffers[inputIndex];
+                NativeInterface.advanceVideo();
+                long sampleTime = NativeInterface.getVideoPresentationTime();
                 byte[] data = NativeInterface.getVideoSample();
-                i++;
                 inputBuffer.clear();
                 inputBuffer.put(data);
                 inputBuffer.clear();
                 int sampleSize = data.length;
                 if (sampleSize > 0) {
-                    sampleTime += NativeInterface.getVideoSampleTime() * 1000;
                     mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
                 } else {
                     Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");

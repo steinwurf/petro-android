@@ -15,7 +15,7 @@ public class VideoExtractorDecoder extends Thread {
     private static final String TAG = "VideoExtractorDecoder";
     private MediaExtractor mExtractor;
     private MediaCodec mDecoder;
-
+    private long mLastSampleTime = 0;
     private boolean eosReceived;
 
     public boolean init(Surface surface, String filePath) {
@@ -74,6 +74,9 @@ public class VideoExtractorDecoder extends Thread {
                     if (mExtractor.advance() && sampleSize > 0) {
                         long sampleTime = mExtractor.getSampleTime();
                         Log.d(TAG, "SampleTime: " + sampleTime);
+                        Log.d(TAG, "SampleTime diff: " + (sampleTime - mLastSampleTime));
+
+                        mLastSampleTime = sampleTime;
                         mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
 
                     } else {

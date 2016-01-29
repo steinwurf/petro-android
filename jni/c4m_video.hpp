@@ -66,11 +66,13 @@ namespace petro_android
 
         }
 
-        std::vector<char> next_sample()
+        bool advance()
         {
+            if (m_file.eof())
+                return false;
+
             uint64_t timestamp = read_from_file<uint64_t>(m_file);
-            m_sample_time = timestamp - m_previous_timetamp;
-            m_previous_timetamp = timestamp;
+            m_presentation_time = timestamp;
 
             std::vector<char> sample = {0, 0, 0, 1};
 
@@ -79,12 +81,18 @@ namespace petro_android
             sample.resize(4 + sample_size);
             read_from_file(m_file, sample.data() + 4, sample_size);
 
-            return sample;
+            m_sample = sample;
+            return true;
         }
 
-        uint32_t sample_time()
+        std::vector<char> sample() const
         {
-            return m_sample_time;
+            return m_sample;
+        }
+
+        uint32_t presentation_time() const
+        {
+            return m_presentation_time;
         }
 
         double width()
@@ -117,7 +125,7 @@ namespace petro_android
         std::vector<char> m_pps = {0, 0, 0, 1};
         std::vector<char> m_sps = {0, 0, 0, 1};
 
-        uint32_t m_sample_time = 0;
-        uint64_t m_previous_timetamp = 0;
+        std::vector<char> m_sample;
+        uint32_t m_presentation_time = 0;
     };
 }
