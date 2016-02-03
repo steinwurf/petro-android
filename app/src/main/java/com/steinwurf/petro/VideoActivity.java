@@ -9,24 +9,27 @@ import android.view.SurfaceView;
 
 import java.io.File;
 
-public class VideoActivity extends AppCompatActivity implements NativeInterface.NativeInterfaceListener, SurfaceHolder.Callback {
-
+public class VideoActivity extends AppCompatActivity
+    implements NativeInterface.NativeInterfaceListener, SurfaceHolder.Callback
+{
     private static final String TAG = "VideoActivity";
     private static final String MP4_FILE = Environment.getExternalStorageDirectory() + "/bunny.mp4";
 
     private VideoDecoder mVideoDecoder;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.video_activity);
-        SurfaceView surfaceView = (SurfaceView)findViewById(R.id.surfaceView);
+        SurfaceView surfaceView = (SurfaceView) findViewById(R.id.surfaceView);
         surfaceView.getHolder().addCallback(this);
 
         NativeInterface.setNativeInterfaceListener(this);
         Log.d(TAG, MP4_FILE);
         File file = new File(MP4_FILE);
-        if(file.exists()) {
+        if (file.exists())
+        {
             Log.d(TAG, "file exists");
         }
         else
@@ -39,39 +42,48 @@ public class VideoActivity extends AppCompatActivity implements NativeInterface.
     }
 
     @Override
-    public void onInitialized() {
+    public void onInitialized()
+    {
         Log.d(TAG, "initialized");
     }
 
     @Override
-    public void surfaceCreated(SurfaceHolder holder) {
+    public void surfaceCreated(SurfaceHolder holder)
+    {
 
     }
 
     @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        if (mVideoDecoder != null) {
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
+    {
+        if (mVideoDecoder != null)
+        {
             if (mVideoDecoder.init(
-                    holder.getSurface(),
-                    NativeInterface.getSPS(),
-                    NativeInterface.getPPS()))
+                holder.getSurface(),
+                NativeInterface.getSPS(),
+                NativeInterface.getPPS()))
             {
                 mVideoDecoder.start();
-            } else {
+            }
+            else
+            {
                 mVideoDecoder = null;
             }
         }
     }
 
     @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-        if (mVideoDecoder != null) {
+    public void surfaceDestroyed(SurfaceHolder holder)
+    {
+        if (mVideoDecoder != null)
+        {
             mVideoDecoder.close();
         }
     }
 
     @Override
-    protected void onStop() {
+    protected void onStop()
+    {
         super.onStop();
         NativeInterface.nativeFinalize();
     }
