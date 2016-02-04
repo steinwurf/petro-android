@@ -9,7 +9,8 @@ import android.view.Surface;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public class VideoDecoder extends Thread {
+public class VideoDecoder extends Thread
+{
     private static final String TAG = "VideoDecoder";
 
     private static final int TIMEOUT_US = 10000;
@@ -19,19 +20,24 @@ public class VideoDecoder extends Thread {
 
     private boolean mEosReceived;
 
-    public boolean init(Surface surface, byte[] sps, byte[] pps) {
+    public boolean init(Surface surface, byte[] sps, byte[] pps)
+    {
         int width = NativeInterface.getWidth();
         int height = NativeInterface.getHeight();
 
-        try {
+        try
+        {
             mDecoder = MediaCodec.createDecoderByType(MIME);
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             e.printStackTrace();
         }
 
         MediaFormat format = MediaFormat.createVideoFormat(MIME, width, height);
 
-        if (format == null) {
+        if (format == null)
+        {
             Log.e(TAG, "Can't create format!");
             return false;
         }
@@ -45,8 +51,10 @@ public class VideoDecoder extends Thread {
 
         return true;
     }
+
     @Override
-    public void run() {
+    public void run()
+    {
         mEosReceived = false;
         mDecoder.start();
         ByteBuffer[] inputBuffers = mDecoder.getInputBuffers();
@@ -54,9 +62,11 @@ public class VideoDecoder extends Thread {
         BufferInfo info = new BufferInfo();
 
         long startWhen = System.currentTimeMillis();
-        while (!mEosReceived) {
+        while (!mEosReceived)
+        {
             int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
-            if (inputIndex >= 0) {
+            if (inputIndex >= 0)
+            {
                 // fill inputBuffers[inputBufferIndex] with valid data
                 ByteBuffer inputBuffer = inputBuffers[inputIndex];
                 NativeInterface.advanceVideo();
@@ -66,15 +76,20 @@ public class VideoDecoder extends Thread {
                 inputBuffer.put(data);
 
                 int sampleSize = data.length;
-                if (sampleSize > 0) {
+                if (sampleSize > 0)
+                {
                     mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
-                } else {
+                }
+                else
+                {
                     Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
-                    mDecoder.queueInputBuffer(inputIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                    mDecoder.queueInputBuffer(inputIndex, 0, 0, 0,
+                        MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                 }
             }
             int outIndex = mDecoder.dequeueOutputBuffer(info, TIMEOUT_US);
-            switch (outIndex) {
+            switch (outIndex)
+            {
                 case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
                     Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
                     mDecoder.getOutputBuffers();
@@ -86,16 +101,23 @@ public class VideoDecoder extends Thread {
                     break;
 
                 case MediaCodec.INFO_TRY_AGAIN_LATER:
-    				Log.d(TAG, "INFO_TRY_AGAIN_LATER");
+                    Log.d(TAG, "INFO_TRY_AGAIN_LATER");
                     break;
                 default:
-                    try {
-                        long sleepTime = (info.presentationTimeUs / 1000) - (System.currentTimeMillis() - startWhen);
-                        Log.d(TAG, "info.presentationTimeUs : " + (info.presentationTimeUs / 1000) + " playTime: " + (System.currentTimeMillis() - startWhen) + " sleepTime : " + sleepTime);
+                    try
+                    {
+                        long sleepTime = (info.presentationTimeUs / 1000) -
+                            (System.currentTimeMillis() - startWhen);
+                        Log.d(TAG,
+                            "info.presentationTimeUs : " + (info.presentationTimeUs / 1000) + " " +
+                            "playTime: " + (System.currentTimeMillis() - startWhen) + " " +
+                            "sleepTime : " + sleepTime);
 
                         if (sleepTime > 0)
                             Thread.sleep(sleepTime);
-                    } catch (InterruptedException e) {
+                    }
+                    catch (InterruptedException e)
+                    {
                         e.printStackTrace();
                     }
 
@@ -104,7 +126,8 @@ public class VideoDecoder extends Thread {
             }
 
             // All decoded frames have been rendered, we can stop playing now
-            if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+            if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0)
+            {
                 Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
                 break;
             }
