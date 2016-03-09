@@ -28,80 +28,104 @@ namespace petro_android
             petro::byte_stream bs(m_file);
 
             petro::parser<
-                petro::box::moov<petro::parser<
-                    petro::box::trak<petro::parser<
-                        petro::box::tkhd,
-                        petro::box::mdia<petro::parser<
-                            petro::box::hdlr,
-                            petro::box::mdhd,
-                            petro::box::minf<petro::parser<
-                                petro::box::stbl<petro::parser<
-                                    petro::box::stco,
-                                    petro::box::stsc,
-                                    petro::box::stsd,
-                                    petro::box::stts,
-                                    petro::box::ctts,
-                                    petro::box::stsz
-                                >>
-                            >>
-                        >>
-                    >>
+            petro::box::moov<petro::parser<
+            petro::box::trak<petro::parser<
+                petro::box::mdia<petro::parser<
+                petro::box::hdlr,
+                petro::box::mdhd,
+                petro::box::minf<petro::parser<
+                petro::box::stbl<petro::parser<
+                petro::box::stsd,
+                petro::box::stsc,
+                petro::box::stco,
+                petro::box::co64,
+                petro::box::ctts,
+                petro::box::stts,
+                petro::box::stsz
                 >>
-            > parser;
+                >>
+                >>
+                >>
+                >>
+                > parser;
 
             auto root = std::make_shared<petro::box::root>();
 
             parser.read(root, bs);
-            m_avcc = std::dynamic_pointer_cast<const petro::box::avcc>(
-                root->get_child("avcC"));
-            assert(m_avcc != nullptr);
 
-            m_trak = m_avcc->get_parent("trak");
+            auto avcc = root->get_child<petro::box::avcc>();
+            assert(avcc != nullptr);
+
+            m_trak = avcc->get_parent("trak");
             assert(m_trak != nullptr);
+
+            auto stco = m_trak->get_child<petro::box::stco>();
+            if (stco != nullptr)
+            {
+                m_chunk_offsets.resize(stco->entry_count());
+                std::copy(
+                    stco->entries().begin(),
+                    stco->entries().end(),
+                    m_chunk_offsets.begin());
+            }
+            else
+            {
+                auto co64 = m_trak->get_child<petro::box::co64>();
+                assert(co64 != nullptr);
+                m_chunk_offsets.resize(co64->entry_count());
+                std::copy(
+                    co64->entries().begin(),
+                    co64->entries().end(),
+                    m_chunk_offsets.begin());
+            }
+
+            auto sps = avcc->sequence_parameter_set(0);
+            auto pps = avcc->picture_parameter_set(0);
+
+            m_sps = {0, 0, 0, 1};
+            std::copy(sps->data(), sps->data() + sps->size(),
+                std::back_inserter(m_sps));
+            m_pps = {0, 0, 0, 1};
+            std::copy(pps->data(), pps->data() + pps->size(),
+                std::back_inserter(m_pps));
+
+            m_video_width = sps->width();
+            m_video_height = sps->height();
         }
 
         bool advance()
         {
-            auto stsz = std::dynamic_pointer_cast<const petro::box::stsz>(
-                m_trak->get_child("stsz"));
+            auto stsz = m_trak->get_child<petro::box::stsz>();
             assert(stsz != nullptr);
-
 
             if (m_next_sample > stsz->sample_count())
                 return false;
 
-
-            auto stts = m_trak->get_child<const petro::box::stts>();
+            auto stts = m_trak->get_child<petro::box::stts>();
             assert(stts != nullptr);
 
-            auto mdhd = m_trak->get_child<const petro::box::mdhd>();
+            auto mdhd = m_trak->get_child<petro::box::mdhd>();
             assert(mdhd != nullptr);
 
-            auto ctts = m_trak->get_child<const petro::box::ctts>();
+            auto ctts = m_trak->get_child<petro::box::ctts>();
 
             m_presentation_time = petro::presentation_time(
                 stts, ctts, mdhd->timescale(), m_next_sample);
 
             std::vector<char> nalu_seperator = {0, 0, 0, 1};
 
-            auto stco = std::dynamic_pointer_cast<const petro::box::stco>(
-                m_trak->get_child("stco"));
-            assert(stco != nullptr);
-
-            auto stsc = std::dynamic_pointer_cast<const petro::box::stsc>(
-                m_trak->get_child("stsc"));
+            auto stsc = m_trak->get_child<petro::box::stsc>();
             assert(stsc != nullptr);
-
 
             std::ifstream mp4_file(m_file, std::ios::binary);
             uint32_t found_samples = 0;
             m_sample.clear();
-            for (uint32_t i = 0; i < stco->entry_count(); ++i)
+            for (uint32_t i = 0; i < m_chunk_offsets.size(); ++i)
             {
                 auto samples_for_chunk = stsc->samples_for_chunk(i);
                 if (found_samples + samples_for_chunk > (uint32_t)m_next_sample)
                 {
-                    auto offset = stco->chunk_offset(i);
+                    auto offset = m_chunk_offsets[i];
                     for (uint32_t j = 0; j < stsc->samples_for_chunk(i); ++j)
                     {
                         if (found_samples == m_next_sample)
@@ -113,6 +137,7 @@ namespace petro_android
                                 nalu_seperator.end());
 
                             mp4_file.seekg(offset);
+
                             auto sample_size = read_sample_size(mp4_file);
 
                             std::vector<char> temp(sample_size);
@@ -151,38 +176,22 @@ namespace petro_android
 
         double width()
         {
-            auto tkhd = std::dynamic_pointer_cast<const petro::box::tkhd>(
-                m_trak->get_child("tkhd"));
-            assert(tkhd != nullptr);
-
-            return tkhd->width();
+            return m_video_width;
         }
 
         double height()
         {
-            auto tkhd = std::dynamic_pointer_cast<const petro::box::tkhd>(
-                m_trak->get_child("tkhd"));
-            assert(tkhd != nullptr);
-
-            return tkhd->height();
+            return m_video_height;
         }
 
         std::vector<char> pps()
         {
-            std::vector<char> pps_buffer = {0, 0, 0, 1};
-
-            auto pps = m_avcc->picture_parameter_set(0);
-            pps_buffer.insert(pps_buffer.end(), pps.begin(), pps.end());
-            return pps_buffer;
+            return m_pps;
         }
 
         std::vector<char> sps()
         {
-            std::vector<char> sps_buffer = {0, 0, 0, 1};
-
-            auto sps = m_avcc->sequence_parameter_set(0);
-            sps_buffer.insert(sps_buffer.end(), sps.begin(), sps.end());
-            return sps_buffer;
+            return m_sps;
         }
 
     private:
@@ -204,9 +213,13 @@ namespace petro_android
 
         std::string m_file;
         uint32_t m_next_sample;
-        std::shared_ptr<const petro::box::avcc> m_avcc;
+        uint32_t m_video_width;
+        uint32_t m_video_height;
         std::shared_ptr<const petro::box::box> m_trak;
         std::vector<char> m_sample;
+        std::vector<char> m_sps;
+        std::vector<char> m_pps;
+        std::vector<uint64_t> m_chunk_offsets;
         uint32_t m_presentation_time;
     };
 }
