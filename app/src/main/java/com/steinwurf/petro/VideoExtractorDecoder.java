@@ -10,7 +10,8 @@ import android.media.MediaFormat;
 import android.util.Log;
 import android.view.Surface;
 
-public class VideoExtractorDecoder extends Thread {
+public class VideoExtractorDecoder extends Thread
+{
     private static final String VIDEO = "video/";
     private static final String TAG = "VideoExtractorDecoder";
     private MediaExtractor mExtractor;
@@ -18,24 +19,30 @@ public class VideoExtractorDecoder extends Thread {
     private long mLastSampleTime = 0;
     private boolean eosReceived;
 
-    public boolean init(Surface surface, String filePath) {
+    public boolean init(Surface surface, String filePath)
+    {
         eosReceived = false;
-        try {
+        try
+        {
             mExtractor = new MediaExtractor();
             mExtractor.setDataSource(filePath);
 
-            for (int i = 0; i < mExtractor.getTrackCount(); i++) {
+            for (int i = 0; i < mExtractor.getTrackCount(); i++)
+            {
                 MediaFormat format = mExtractor.getTrackFormat(i);
 
                 String mime = format.getString(MediaFormat.KEY_MIME);
-                if (mime.startsWith(VIDEO)) {
+                if (mime.startsWith(VIDEO))
+                {
                     mExtractor.selectTrack(i);
                     mDecoder = MediaCodec.createDecoderByType(mime);
-                    try {
+                    try
+                    {
                         Log.d(TAG, "format : " + format);
                         mDecoder.configure(format, surface, null, 0 /* Decoder */);
-
-                    } catch (IllegalStateException e) {
+                    }
+                    catch (IllegalStateException e)
+                    {
                         Log.e(TAG, "codec '" + mime + "' failed configuration. " + e);
                         return false;
                     }
@@ -44,8 +51,9 @@ public class VideoExtractorDecoder extends Thread {
                     break;
                 }
             }
-
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             e.printStackTrace();
         }
 
@@ -53,7 +61,8 @@ public class VideoExtractorDecoder extends Thread {
     }
 
     @Override
-    public void run() {
+    public void run()
+    {
         BufferInfo info = new BufferInfo();
         ByteBuffer[] inputBuffers = mDecoder.getInputBuffers();
         mDecoder.getOutputBuffers();
@@ -62,33 +71,40 @@ public class VideoExtractorDecoder extends Thread {
         boolean first = false;
         long startWhen = 0;
 
-        while (!eosReceived) {
-            if (isInput) {
+        while (!eosReceived)
+        {
+            if (isInput)
+            {
                 int inputIndex = mDecoder.dequeueInputBuffer(10000);
-                if (inputIndex >= 0) {
+                if (inputIndex >= 0)
+                {
                     // fill inputBuffers[inputBufferIndex] with valid data
                     ByteBuffer inputBuffer = inputBuffers[inputIndex];
 
                     int sampleSize = mExtractor.readSampleData(inputBuffer, 0);
 
-                    if (mExtractor.advance() && sampleSize > 0) {
+                    if (mExtractor.advance() && sampleSize > 0)
+                    {
                         long sampleTime = mExtractor.getSampleTime();
                         Log.d(TAG, "SampleTime: " + sampleTime);
                         Log.d(TAG, "SampleTime diff: " + (sampleTime - mLastSampleTime));
 
                         mLastSampleTime = sampleTime;
                         mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
-
-                    } else {
+                    }
+                    else
+                    {
                         Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
-                        mDecoder.queueInputBuffer(inputIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                        mDecoder.queueInputBuffer(inputIndex, 0, 0, 0,
+                            MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                         isInput = false;
                     }
                 }
             }
 
             int outIndex = mDecoder.dequeueOutputBuffer(info, 10000);
-            switch (outIndex) {
+            switch (outIndex)
+            {
                 case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
                     Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
                     mDecoder.getOutputBuffers();
@@ -103,17 +119,25 @@ public class VideoExtractorDecoder extends Thread {
                     break;
 
                 default:
-                    if (!first) {
+                    if (!first)
+                    {
                         startWhen = System.currentTimeMillis();
                         first = true;
                     }
-                    try {
-                        long sleepTime = (info.presentationTimeUs / 1000) - (System.currentTimeMillis() - startWhen);
-                        Log.d(TAG, "info.presentationTimeUs : " + (info.presentationTimeUs / 1000) + " playTime: " + (System.currentTimeMillis() - startWhen) + " sleepTime : " + sleepTime);
+                    try
+                    {
+                        long sleepTime = (info.presentationTimeUs / 1000) -
+                            (System.currentTimeMillis() - startWhen);
+                        Log.d(TAG,
+                            "info.presentationTimeUs : " + (info.presentationTimeUs / 1000) + " " +
+                            "playTime: " + (System.currentTimeMillis() - startWhen) + " " +
+                            "sleepTime : " + sleepTime);
 
                         if (sleepTime > 0)
                             Thread.sleep(sleepTime);
-                    } catch (InterruptedException e) {
+                    }
+                    catch (InterruptedException e)
+                    {
                         e.printStackTrace();
                     }
 
@@ -122,7 +146,8 @@ public class VideoExtractorDecoder extends Thread {
             }
 
             // All decoded frames have been rendered, we can stop playing now
-            if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+            if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0)
+            {
                 Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
                 break;
             }
@@ -133,7 +158,8 @@ public class VideoExtractorDecoder extends Thread {
         mExtractor.release();
     }
 
-    public void close() {
+    public void close()
+    {
         eosReceived = true;
     }
 }

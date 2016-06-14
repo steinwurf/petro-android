@@ -9,7 +9,8 @@ import android.view.SurfaceView;
 
 import java.io.File;
 
-public class VideoExtractorActivity extends AppCompatActivity implements SurfaceHolder.Callback {
+public class VideoExtractorActivity extends AppCompatActivity implements SurfaceHolder.Callback
+{
 
     private static final String TAG = "VideoExtractorActivity";
     private static final String MP4_FILE = Environment.getExternalStorageDirectory() + "/bunny.mp4";
@@ -17,10 +18,11 @@ public class VideoExtractorActivity extends AppCompatActivity implements Surface
     private VideoExtractorDecoder mVideoDecoder;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.video_activity);
-        SurfaceView surfaceView = (SurfaceView)findViewById(R.id.surfaceView);
+        SurfaceView surfaceView = (SurfaceView) findViewById(R.id.surfaceView);
         surfaceView.getHolder().addCallback(this);
 
         NativeInterface.nativeInitialize(MP4_FILE);
@@ -28,26 +30,33 @@ public class VideoExtractorActivity extends AppCompatActivity implements Surface
     }
 
     @Override
-    public void surfaceCreated(SurfaceHolder holder) {
+    public void surfaceCreated(SurfaceHolder holder)
+    {
 
     }
 
     @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        if (mVideoDecoder != null) {
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
+    {
+        if (mVideoDecoder != null)
+        {
             if (mVideoDecoder.init(
-                    holder.getSurface(), MP4_FILE))
+                holder.getSurface(), MP4_FILE))
             {
                 mVideoDecoder.start();
-            } else {
+            }
+            else
+            {
                 mVideoDecoder = null;
             }
         }
     }
 
     @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-        if (mVideoDecoder != null) {
+    public void surfaceDestroyed(SurfaceHolder holder)
+    {
+        if (mVideoDecoder != null)
+        {
             mVideoDecoder.close();
         }
     }

@@ -11,7 +11,8 @@ import android.media.MediaCodec.BufferInfo;
 import android.media.MediaFormat;
 import android.util.Log;
 
-public class AudioDecoder  extends Thread {
+public class AudioDecoder extends Thread
+{
     private static final String TAG = "AudioDecoder";
 
     private static final int TIMEOUT_US = 10000;
@@ -23,21 +24,27 @@ public class AudioDecoder  extends Thread {
 
     AudioTrack mAudioTrack;
 
-    public boolean init(int audioProfile, int sampleRateIndex, int channelCount) {
-
-        try {
+    public boolean init(int audioProfile, int sampleRateIndex, int channelCount)
+    {
+        try
+        {
             mDecoder = MediaCodec.createDecoderByType(MIME);
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             e.printStackTrace();
         }
 
-        int sampleRate = new int[]{
-                96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050,
-                16000, 12000, 11025, 8000}[sampleRateIndex];
+        int sampleRate = new int[]
+        {
+            96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050,
+            16000, 12000, 11025, 8000
+        }[sampleRateIndex];
 
         MediaFormat format = MediaFormat.createAudioFormat(MIME, sampleRate, channelCount);
 
-        if (format == null) {
+        if (format == null)
+        {
             Log.e(TAG, "Can't create format!");
             return false;
         }
@@ -53,17 +60,18 @@ public class AudioDecoder  extends Thread {
 
         // create an audiotrack object
         mAudioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate,
-                AudioFormat.CHANNEL_OUT_STEREO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                AudioTrack.getMinBufferSize(
-                        sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT),
-                AudioTrack.MODE_STREAM);
+            AudioFormat.CHANNEL_OUT_STEREO,
+            AudioFormat.ENCODING_PCM_16BIT,
+            AudioTrack.getMinBufferSize(
+                sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT),
+            AudioTrack.MODE_STREAM);
 
         return true;
     }
 
     @Override
-    public void run() {
+    public void run()
+    {
         mEosReceived = false;
         mDecoder.start();
 
@@ -74,12 +82,13 @@ public class AudioDecoder  extends Thread {
 
         mAudioTrack.play();
 
-        long sampleTime =  0;
+        long sampleTime = 0;
         int i = 0;
-        while (!mEosReceived) {
+        while (!mEosReceived)
+        {
             int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
-            if (inputIndex >= 0) {
-
+            if (inputIndex >= 0)
+            {
                 NativeInterface.advanceAudio();
                 // fill inputBuffers[inputBufferIndex] with valid data
                 ByteBuffer inputBuffer = inputBuffers[inputIndex];
@@ -89,16 +98,21 @@ public class AudioDecoder  extends Thread {
                 inputBuffer.put(data);
                 inputBuffer.clear();
                 int sampleSize = data.length;
-                if (sampleSize > 0) {
+                if (sampleSize > 0)
+                {
                     sampleTime += NativeInterface.getAudioPresentationTime() * 1000;
                     mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
-                } else {
+                }
+                else
+                {
                     Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
-                    mDecoder.queueInputBuffer(inputIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                    mDecoder.queueInputBuffer(inputIndex, 0, 0, 0,
+                        MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                 }
             }
             int outIndex = mDecoder.dequeueOutputBuffer(info, TIMEOUT_US);
-            switch (outIndex) {
+            switch (outIndex)
+            {
                 case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
                     Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
                     outputBuffers = mDecoder.getOutputBuffers();
@@ -124,7 +138,8 @@ public class AudioDecoder  extends Thread {
             }
 
             // All decoded frames have been rendered, we can stop playing now
-            if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+            if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0)
+            {
                 Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
                 break;
             }
@@ -141,5 +156,4 @@ public class AudioDecoder  extends Thread {
     {
         mEosReceived = true;
     }
-
 }
