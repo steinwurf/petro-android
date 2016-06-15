@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <vector>
 #include <cstdint>
 #include <memory>
@@ -19,7 +20,6 @@ namespace petro_android
 {
     class mp4_video : public video_interface
     {
-
     public:
         mp4_video(const std::string& file):
             m_file(file),
@@ -28,26 +28,26 @@ namespace petro_android
             petro::byte_stream bs(m_file);
 
             petro::parser<
-            petro::box::moov<petro::parser<
-            petro::box::trak<petro::parser<
-                petro::box::mdia<petro::parser<
-                petro::box::hdlr,
-                petro::box::mdhd,
-                petro::box::minf<petro::parser<
-                petro::box::stbl<petro::parser<
-                petro::box::stsd,
-                petro::box::stsc,
-                petro::box::stco,
-                petro::box::co64,
-                petro::box::ctts,
-                petro::box::stts,
-                petro::box::stsz
+                petro::box::moov<petro::parser<
+                    petro::box::trak<petro::parser<
+                        petro::box::mdia<petro::parser<
+                            petro::box::hdlr,
+                            petro::box::mdhd,
+                            petro::box::minf<petro::parser<
+                                petro::box::stbl<petro::parser<
+                                    petro::box::stsd,
+                                    petro::box::stsc,
+                                    petro::box::stco,
+                                    petro::box::co64,
+                                    petro::box::ctts,
+                                    petro::box::stts,
+                                    petro::box::stsz
+                                >>
+                            >>
+                        >>
+                    >>
                 >>
-                >>
-                >>
-                >>
-                >>
-                > parser;
+            > parser;
 
             auto root = std::make_shared<petro::box::root>();
 
@@ -84,10 +84,10 @@ namespace petro_android
 
             m_sps = {0, 0, 0, 1};
             std::copy(sps->data(), sps->data() + sps->size(),
-                std::back_inserter(m_sps));
+                      std::back_inserter(m_sps));
             m_pps = {0, 0, 0, 1};
             std::copy(pps->data(), pps->data() + pps->size(),
-                std::back_inserter(m_pps));
+                      std::back_inserter(m_pps));
 
             m_video_width = sps->width();
             m_video_height = sps->height();
@@ -98,7 +98,7 @@ namespace petro_android
             auto stsz = m_trak->get_child<petro::box::stsz>();
             assert(stsz != nullptr);
 
-            if (m_next_sample > stsz->sample_count())
+            if (m_next_sample >= stsz->sample_count())
                 return false;
 
             auto stts = m_trak->get_child<petro::box::stts>();
@@ -112,7 +112,7 @@ namespace petro_android
             m_presentation_time = petro::presentation_time(
                 stts, ctts, mdhd->timescale(), m_next_sample);
 
-            std::vector<char> nalu_seperator = {0, 0, 0, 1};
+            std::vector<char> start_code = {0, 0, 0, 1};
 
             auto stsc = m_trak->get_child<petro::box::stsc>();
             assert(stsc != nullptr);
@@ -123,34 +123,35 @@ namespace petro_android
             for (uint32_t i = 0; i < m_chunk_offsets.size(); ++i)
             {
                 auto samples_for_chunk = stsc->samples_for_chunk(i);
-                if (found_samples + samples_for_chunk > (uint32_t)m_next_sample)
+                if (found_samples + samples_for_chunk > m_next_sample)
                 {
                     auto offset = m_chunk_offsets[i];
                     for (uint32_t j = 0; j < stsc->samples_for_chunk(i); ++j)
                     {
+                        uint32_t sample_size = stsz->sample_size(found_samples);
+
                         if (found_samples == m_next_sample)
                         {
                             m_next_sample++;
-                            m_sample.insert(
-                                m_sample.begin(),
-                                nalu_seperator.begin(),
-                                nalu_seperator.end());
-
                             mp4_file.seekg(offset);
+                            m_sample.resize(sample_size);
 
-                            auto sample_size = read_sample_size(mp4_file);
-
-                            std::vector<char> temp(sample_size);
-
-                            mp4_file.read(temp.data(), sample_size);
-
-                            m_sample.insert(
-                                m_sample.end(),
-                                temp.data(),
-                                temp.data() + (sample_size + nalu_seperator.size()));
+                            // Read multiple NALUs from the Access Unit (AU)
+                            // and replace the AVCC headers with the start code
+                            uint32_t nalu_offset = 0;
+                            while (nalu_offset < sample_size)
+                            {
+                                uint32_t nalu_size = read_nalu_size(mp4_file);
+                                std::copy_n(start_code.begin(), 4,
+                                            &m_sample[nalu_offset]);
+                                nalu_offset += sizeof(uint32_t);
+                                mp4_file.read(
+                                    &m_sample[nalu_offset], nalu_size);
+                                nalu_offset += nalu_size;
+                            }
                             break;
                         }
-                        offset += stsz->sample_size(found_samples);
+                        offset += sample_size;
                         found_samples += 1;
                     }
                     break;
@@ -196,7 +197,7 @@ namespace petro_android
 
     private:
 
-        uint32_t read_sample_size(std::istream& file)
+        uint32_t read_nalu_size(std::istream& file)
         {
             std::vector<uint8_t> data(4);
             file.read((char*)data.data(), data.size());
