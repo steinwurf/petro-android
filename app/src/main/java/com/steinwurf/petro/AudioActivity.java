@@ -19,7 +19,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-public class AudioActivity extends AppCompatActivity implements NativeInterface.NativeInterfaceListener {
+public class AudioActivity extends AppCompatActivity
+    implements NativeInterface.NativeInterfaceListener
+{
 
     private static final String TAG = "AudioActivity";
     private static final String MP4_FILE = Environment.getExternalStorageDirectory() + "/bunny.mp4";
@@ -27,13 +29,15 @@ public class AudioActivity extends AppCompatActivity implements NativeInterface.
     private AudioDecoder mAudioDecoder;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
 
         NativeInterface.setNativeInterfaceListener(this);
         Log.d(TAG, MP4_FILE);
         File file = new File(MP4_FILE);
-        if(file.exists()) {
+        if (file.exists())
+        {
             Log.d(TAG, "file exists");
         }
         else
@@ -46,25 +50,31 @@ public class AudioActivity extends AppCompatActivity implements NativeInterface.
     }
 
     @Override
-    public void onInitialized() {
+    public void onInitialized()
+    {
         Log.d(TAG, "initialized");
-        if (mAudioDecoder != null) {
+        if (mAudioDecoder != null)
+        {
             if (mAudioDecoder.init(
-                    NativeInterface.getAudioCodecProfileLevel(),
-                    NativeInterface.getAudioSampleRate(),
-                    NativeInterface.getAudioChannelCount()))
+                NativeInterface.getAudioCodecProfileLevel(),
+                NativeInterface.getAudioSampleRate(),
+                NativeInterface.getAudioChannelCount()))
             {
                 mAudioDecoder.start();
-            } else {
+            }
+            else
+            {
                 mAudioDecoder = null;
             }
         }
     }
 
     @Override
-    public void onStop() {
+    public void onStop()
+    {
         super.onStop();
-        if (mAudioDecoder != null) {
+        if (mAudioDecoder != null)
+        {
             mAudioDecoder.close();
         }
         NativeInterface.nativeFinalize();

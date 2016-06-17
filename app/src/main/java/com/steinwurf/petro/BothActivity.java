@@ -9,7 +9,9 @@ import android.view.SurfaceView;
 
 import java.io.File;
 
-public class BothActivity extends AppCompatActivity implements NativeInterface.NativeInterfaceListener, SurfaceHolder.Callback {
+public class BothActivity extends AppCompatActivity
+    implements NativeInterface.NativeInterfaceListener, SurfaceHolder.Callback
+{
 
     private static final String TAG = "BothActivity";
     private static final String MP4_FILE = Environment.getExternalStorageDirectory() + "/bunny.mp4";
@@ -18,16 +20,18 @@ public class BothActivity extends AppCompatActivity implements NativeInterface.N
     private AudioDecoder mAudioDecoder;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.video_activity);
-        SurfaceView surfaceView = (SurfaceView)findViewById(R.id.surfaceView);
+        SurfaceView surfaceView = (SurfaceView) findViewById(R.id.surfaceView);
         surfaceView.getHolder().addCallback(this);
 
         NativeInterface.setNativeInterfaceListener(this);
         Log.d(TAG, MP4_FILE);
         File file = new File(MP4_FILE);
-        if(file.exists()) {
+        if (file.exists())
+        {
             Log.d(TAG, "file exists");
         }
         else
@@ -41,18 +45,22 @@ public class BothActivity extends AppCompatActivity implements NativeInterface.N
     }
 
     @Override
-    public void onInitialized() {
+    public void onInitialized()
+    {
         Log.d(TAG, "initialized");
     }
 
     @Override
-    public void surfaceCreated(SurfaceHolder holder) {
+    public void surfaceCreated(SurfaceHolder holder)
+    {
 
     }
 
     @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        if (mVideoDecoder != null && mAudioDecoder != null) {
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
+    {
+        if (mVideoDecoder != null && mAudioDecoder != null)
+        {
             if (mVideoDecoder.init(
                     holder.getSurface(),
                     NativeInterface.getSPS(),
@@ -64,7 +72,9 @@ public class BothActivity extends AppCompatActivity implements NativeInterface.N
             {
                 mVideoDecoder.start();
                 mAudioDecoder.start();
-            } else {
+            }
+            else
+            {
                 mVideoDecoder = null;
                 mAudioDecoder = null;
             }
@@ -72,17 +82,21 @@ public class BothActivity extends AppCompatActivity implements NativeInterface.N
     }
 
     @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-        if (mVideoDecoder != null) {
+    public void surfaceDestroyed(SurfaceHolder holder)
+    {
+        if (mVideoDecoder != null)
+        {
             mVideoDecoder.close();
         }
-        if (mAudioDecoder != null) {
+        if (mAudioDecoder != null)
+        {
             mAudioDecoder.close();
         }
     }
 
     @Override
-    protected void onStop() {
+    protected void onStop()
+    {
         super.onStop();
         NativeInterface.nativeFinalize();
     }

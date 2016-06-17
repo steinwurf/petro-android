@@ -19,7 +19,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-public class AudioExtractorActivity extends AppCompatActivity {
+public class AudioExtractorActivity extends AppCompatActivity
+{
 
     private static final String TAG = "AudioExtractorActivity";
     private static final String MP4_FILE = Environment.getExternalStorageDirectory() + "/bunny.mp4";
@@ -27,12 +28,14 @@ public class AudioExtractorActivity extends AppCompatActivity {
     private AudioExtractorDecoder mAudioDecoder;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
 
         Log.d(TAG, MP4_FILE);
         File file = new File(MP4_FILE);
-        if(file.exists()) {
+        if (file.exists())
+        {
             Log.d(TAG, "file exists");
         }
         else
@@ -43,13 +46,14 @@ public class AudioExtractorActivity extends AppCompatActivity {
         mAudioDecoder = new AudioExtractorDecoder();
         mAudioDecoder.init(MP4_FILE);
         mAudioDecoder.start();
-
     }
 
     @Override
-    public void onStop() {
+    public void onStop()
+    {
         super.onStop();
-        if (mAudioDecoder != null) {
+        if (mAudioDecoder != null)
+        {
             mAudioDecoder.close();
         }
     }

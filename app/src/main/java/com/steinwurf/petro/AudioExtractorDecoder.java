@@ -29,11 +29,10 @@ import android.media.MediaFormat;
 import android.util.Log;
 
 /**
- *
  * @author taehwan
- *
  */
-public class AudioExtractorDecoder extends Thread {
+public class AudioExtractorDecoder extends Thread
+{
     private static final String AUDIO = "audio/";
     private static final int TIMEOUT_US = 1000;
     private static final String TAG = "AudioExtractorDecoder";
@@ -43,20 +42,26 @@ public class AudioExtractorDecoder extends Thread {
     private boolean eosReceived;
     private int mSampleRate = 0;
 
-    public boolean init(String path) {
+    public boolean init(String path)
+    {
         eosReceived = false;
         mExtractor = new MediaExtractor();
-        try {
+        try
+        {
             mExtractor.setDataSource(path);
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             e.printStackTrace();
         }
 
         int channel = 0;
-        for (int i = 0; i < mExtractor.getTrackCount(); i++) {
+        for (int i = 0; i < mExtractor.getTrackCount(); i++)
+        {
             MediaFormat format = mExtractor.getTrackFormat(i);
             String mime = format.getString(MediaFormat.KEY_MIME);
-            if (mime.startsWith(AUDIO)) {
+            if (mime.startsWith(AUDIO))
+            {
                 mExtractor.selectTrack(i);
                 Log.d(TAG, "format : " + format);
 
@@ -65,18 +70,23 @@ public class AudioExtractorDecoder extends Thread {
                 break;
             }
         }
-        MediaFormat format = makeAACCodecSpecificData(MediaCodecInfo.CodecProfileLevel.AACObjectLC, mSampleRate, channel);
+        MediaFormat format = makeAACCodecSpecificData(MediaCodecInfo.CodecProfileLevel.AACObjectLC,
+            mSampleRate, channel);
         if (format == null)
             return false;
 
-        try {
+        try
+        {
             mDecoder = MediaCodec.createDecoderByType("audio/mp4a-latm");
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             e.printStackTrace();
         }
         mDecoder.configure(format, null, null, 0);
 
-        if (mDecoder == null) {
+        if (mDecoder == null)
+        {
             Log.e("DecodeActivity", "Can't find video info!");
             return false;
         }
@@ -89,34 +99,40 @@ public class AudioExtractorDecoder extends Thread {
      * produce the AAC Codec SpecificData.
      * Android 4.4.2/frameworks/av/media/libstagefright/avc_utils.cpp refer
      * to the portion of the code written.
+     * <p/>
+     * MPEG-4 Audio refer : http://wiki.multimedia.cx/index
+     * .php?title=MPEG-4_Audio#Audio_Specific_Config
      *
-     * MPEG-4 Audio refer : http://wiki.multimedia.cx/index.php?title=MPEG-4_Audio#Audio_Specific_Config
-     *
-     * @param audioProfile is MPEG-4 Audio Object Types
+     * @param audioProfile  is MPEG-4 Audio Object Types
      * @param sampleRate
      * @param channelConfig
      * @return MediaFormat
      */
-    private MediaFormat makeAACCodecSpecificData(int audioProfile, int sampleRate, int channelConfig) {
+    private MediaFormat makeAACCodecSpecificData(int audioProfile, int sampleRate,
+        int channelConfig)
+    {
         MediaFormat format = new MediaFormat();
         format.setString(MediaFormat.KEY_MIME, "audio/mp4a-latm");
         format.setInteger(MediaFormat.KEY_SAMPLE_RATE, sampleRate);
         format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, channelConfig);
 
         int samplingFreq[] = {
-                96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050,
-                16000, 12000, 11025, 8000
+            96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050,
+            16000, 12000, 11025, 8000
         };
 
         // Search the Sampling Frequencies
         int sampleIndex = -1;
-        for (int i = 0; i < samplingFreq.length; ++i) {
-            if (samplingFreq[i] == sampleRate) {
+        for (int i = 0; i < samplingFreq.length; ++i)
+        {
+            if (samplingFreq[i] == sampleRate)
+            {
                 sampleIndex = i;
             }
         }
 
-        if (sampleIndex == -1) {
+        if (sampleIndex == -1)
+        {
             return null;
         }
 
@@ -128,7 +144,8 @@ public class AudioExtractorDecoder extends Thread {
         csd.flip();
         format.setByteBuffer("csd-0", csd); // add csd-0
 
-        for (int k = 0; k < csd.capacity(); ++k) {
+        for (int k = 0; k < csd.capacity(); ++k)
+        {
             Log.e(TAG, "csd : " + csd.array()[k]);
         }
 
@@ -139,35 +156,42 @@ public class AudioExtractorDecoder extends Thread {
      * After decoding AAC, Play using Audio Track.
      */
     @Override
-    public void run() {
+    public void run()
+    {
         mDecoder.start();
         ByteBuffer[] inputBuffers = mDecoder.getInputBuffers();
         ByteBuffer[] outputBuffers = mDecoder.getOutputBuffers();
 
         BufferInfo info = new BufferInfo();
 
-        int buffsize = AudioTrack.getMinBufferSize(mSampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+        int buffsize = AudioTrack.getMinBufferSize(mSampleRate, AudioFormat.CHANNEL_OUT_STEREO,
+            AudioFormat.ENCODING_PCM_16BIT);
         // create an audiotrack object
         AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, mSampleRate,
-                AudioFormat.CHANNEL_OUT_STEREO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                buffsize,
-                AudioTrack.MODE_STREAM);
+            AudioFormat.CHANNEL_OUT_STEREO,
+            AudioFormat.ENCODING_PCM_16BIT,
+            buffsize,
+            AudioTrack.MODE_STREAM);
         audioTrack.play();
 
-        while (!eosReceived) {
+        while (!eosReceived)
+        {
             int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
-            if (inputIndex >= 0) {
+            if (inputIndex >= 0)
+            {
                 ByteBuffer buffer = inputBuffers[inputIndex];
                 int sampleSize = mExtractor.readSampleData(buffer, 0);
-                if (sampleSize < 0) {
+                if (sampleSize < 0)
+                {
                     // We shouldn't stop the playback at this point, just pass the EOS
                     // flag to mDecoder, we will get it again from the
                     // dequeueOutputBuffer
                     Log.d("DecodeActivity", "InputBuffer BUFFER_FLAG_END_OF_STREAM");
-                    mDecoder.queueInputBuffer(inputIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-
-                } else {
+                    mDecoder.queueInputBuffer(inputIndex, 0, 0, 0,
+                        MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                }
+                else
+                {
                     long sampleTime = mExtractor.getSampleTime();
                     Log.d(TAG, "SampleTime: " + sampleTime);
                     mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
@@ -175,7 +199,8 @@ public class AudioExtractorDecoder extends Thread {
                 }
 
                 int outIndex = mDecoder.dequeueOutputBuffer(info, TIMEOUT_US);
-                switch (outIndex) {
+                switch (outIndex)
+                {
                     case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
                         Log.d("DecodeActivity", "INFO_OUTPUT_BUFFERS_CHANGED");
                         outputBuffers = mDecoder.getOutputBuffers();
@@ -193,19 +218,24 @@ public class AudioExtractorDecoder extends Thread {
 
                     default:
                         ByteBuffer outBuffer = outputBuffers[outIndex];
-                        Log.v("DecodeActivity", "We can't use this buffer but render it due to the API limit, " + outBuffer);
+                        Log.v("DecodeActivity",
+                            "We can't use this buffer but render it due to the API limit, " +
+                                outBuffer);
 
                         final byte[] chunk = new byte[info.size];
                         outBuffer.get(chunk); // Read the buffer all at once
-                        outBuffer.clear(); // ** MUST DO!!! OTHERWISE THE NEXT TIME YOU GET THIS SAME BUFFER BAD THINGS WILL HAPPEN
+                        outBuffer.clear(); // ** MUST DO!!! OTHERWISE THE NEXT TIME YOU GET THIS
+                        // SAME BUFFER BAD THINGS WILL HAPPEN
 
-                        audioTrack.write(chunk, info.offset, info.offset + info.size); // AudioTrack write data
+                        audioTrack.write(chunk, info.offset,
+                            info.offset + info.size); // AudioTrack write data
                         mDecoder.releaseOutputBuffer(outIndex, false);
                         break;
                 }
 
                 // All decoded frames have been rendered, we can stop playing now
-                if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0)
+                {
                     Log.d("DecodeActivity", "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
                     break;
                 }
@@ -224,8 +254,8 @@ public class AudioExtractorDecoder extends Thread {
         audioTrack = null;
     }
 
-    public void close() {
+    public void close()
+    {
         eosReceived = true;
     }
-
 }
