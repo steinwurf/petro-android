@@ -42,8 +42,8 @@ bundle_dependencies
 *~
 
 #Eclipse ignore
-#.cproject
-#.project
+.cproject
+.project
 .metadata
 local.properties
 #.classpath
