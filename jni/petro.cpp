@@ -76,22 +76,22 @@ extern "C"
         return jsps;
     }
 
-    jint Java_com_steinwurf_petro_NativeInterface_getWidth(
+    jint Java_com_steinwurf_petro_NativeInterface_getVideoWidth(
         JNIEnv* /*env*/, jobject /*thiz*/)
     {
         return video->video_width();
     }
 
-    jint Java_com_steinwurf_petro_NativeInterface_getHeight(
+    jint Java_com_steinwurf_petro_NativeInterface_getVideoHeight(
         JNIEnv* /*env*/, jobject /*thiz*/)
     {
         return video->video_height();
     }
 
-    void Java_com_steinwurf_petro_NativeInterface_advanceVideo(
+    jboolean Java_com_steinwurf_petro_NativeInterface_advanceVideo(
         JNIEnv* /*env*/, jobject /*thiz*/)
     {
-        video->advance_to_next_sample();
+        return video->load_next_sample();
     }
 
     jint Java_com_steinwurf_petro_NativeInterface_getVideoPresentationTime(
@@ -128,10 +128,10 @@ extern "C"
         return audio->channel_configuration();
     }
 
-    void Java_com_steinwurf_petro_NativeInterface_advanceAudio(
+    jboolean Java_com_steinwurf_petro_NativeInterface_advanceAudio(
         JNIEnv* /*env*/, jobject /*thiz*/)
     {
-        audio->advance_to_next_sample();
+        return audio->load_next_sample();
     }
 
     jint Java_com_steinwurf_petro_NativeInterface_getAudioPresentationTime(

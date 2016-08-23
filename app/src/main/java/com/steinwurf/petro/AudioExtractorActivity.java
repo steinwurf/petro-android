@@ -2,6 +2,7 @@ package com.steinwurf.petro;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.MediaCodec;
 import android.os.Environment;
@@ -21,9 +22,7 @@ import java.util.ArrayList;
 
 public class AudioExtractorActivity extends AppCompatActivity
 {
-
     private static final String TAG = "AudioExtractorActivity";
-    private static final String MP4_FILE = Environment.getExternalStorageDirectory() + "/bunny.mp4";
 
     private AudioExtractorDecoder mAudioDecoder;
 
@@ -32,19 +31,11 @@ public class AudioExtractorActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
 
-        Log.d(TAG, MP4_FILE);
-        File file = new File(MP4_FILE);
-        if (file.exists())
-        {
-            Log.d(TAG, "file exists");
-        }
-        else
-        {
-            Log.d(TAG, "file does not exists");
-        }
+        Intent intent = getIntent();
+        String filePath = intent.getStringExtra(MainActivity.FILEPATH);
 
         mAudioDecoder = new AudioExtractorDecoder();
-        mAudioDecoder.init(MP4_FILE);
+        mAudioDecoder.init(filePath);
         mAudioDecoder.start();
     }
 

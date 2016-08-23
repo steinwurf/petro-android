@@ -83,24 +83,23 @@ public class AudioDecoder extends Thread
         mAudioTrack.play();
 
         long sampleTime = 0;
-        int i = 0;
+
         while (!mEosReceived)
         {
             int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
             if (inputIndex >= 0)
             {
-                NativeInterface.advanceAudio();
-                // fill inputBuffers[inputBufferIndex] with valid data
-                ByteBuffer inputBuffer = inputBuffers[inputIndex];
-                byte[] data = NativeInterface.getAudioSample();
-                i++;
-                inputBuffer.clear();
-                inputBuffer.put(data);
-                inputBuffer.clear();
-                int sampleSize = data.length;
-                if (sampleSize > 0)
+                if (NativeInterface.advanceAudio())
                 {
+                    // fill inputBuffers[inputBufferIndex] with valid data
+                    ByteBuffer inputBuffer = inputBuffers[inputIndex];
+
+                    byte[] data = NativeInterface.getAudioSample();
+                    inputBuffer.clear();
+                    inputBuffer.put(data);
+                    int sampleSize = data.length;
                     sampleTime += NativeInterface.getAudioPresentationTime() * 1000;
+
                     mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
                 }
                 else
@@ -108,6 +107,7 @@ public class AudioDecoder extends Thread
                     Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
                     mDecoder.queueInputBuffer(inputIndex, 0, 0, 0,
                         MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                    mEosReceived = true;
                 }
             }
             int outIndex = mDecoder.dequeueOutputBuffer(info, TIMEOUT_US);
@@ -123,9 +123,11 @@ public class AudioDecoder extends Thread
                     Log.d(TAG, "INFO_OUTPUT_FORMAT_CHANGED format : " + format);
                     mAudioTrack.setPlaybackRate(format.getInteger(MediaFormat.KEY_SAMPLE_RATE));
                     break;
+
                 case MediaCodec.INFO_TRY_AGAIN_LATER:
                     Log.d(TAG, "INFO_TRY_AGAIN_LATER");
                     break;
+
                 default:
 
                     ByteBuffer outBuffer = outputBuffers[outIndex];

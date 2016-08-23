@@ -39,12 +39,12 @@ public class AudioExtractorDecoder extends Thread
     private MediaExtractor mExtractor;
     private MediaCodec mDecoder;
 
-    private boolean eosReceived;
+    private boolean mEosReceived;
     private int mSampleRate = 0;
 
     public boolean init(String path)
     {
-        eosReceived = false;
+        mEosReceived = false;
         mExtractor = new MediaExtractor();
         try
         {
@@ -87,7 +87,7 @@ public class AudioExtractorDecoder extends Thread
 
         if (mDecoder == null)
         {
-            Log.e("DecodeActivity", "Can't find video info!");
+            Log.e(TAG, "Can't find video info!");
             return false;
         }
 
@@ -174,51 +174,50 @@ public class AudioExtractorDecoder extends Thread
             AudioTrack.MODE_STREAM);
         audioTrack.play();
 
-        while (!eosReceived)
+        while (!mEosReceived)
         {
             int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
             if (inputIndex >= 0)
             {
                 ByteBuffer buffer = inputBuffers[inputIndex];
+
                 int sampleSize = mExtractor.readSampleData(buffer, 0);
-                if (sampleSize < 0)
+                if (sampleSize > 0)
                 {
-                    // We shouldn't stop the playback at this point, just pass the EOS
-                    // flag to mDecoder, we will get it again from the
-                    // dequeueOutputBuffer
-                    Log.d("DecodeActivity", "InputBuffer BUFFER_FLAG_END_OF_STREAM");
-                    mDecoder.queueInputBuffer(inputIndex, 0, 0, 0,
-                        MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                    long sampleTime = mExtractor.getSampleTime();
+                    mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
+
+                    mExtractor.advance();
                 }
                 else
                 {
-                    long sampleTime = mExtractor.getSampleTime();
-                    Log.d(TAG, "SampleTime: " + sampleTime);
-                    mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
-                    mExtractor.advance();
+                    Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
+                    mDecoder.queueInputBuffer(inputIndex, 0, 0, 0,
+                        MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                    mEosReceived = true;
                 }
 
                 int outIndex = mDecoder.dequeueOutputBuffer(info, TIMEOUT_US);
                 switch (outIndex)
                 {
                     case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                        Log.d("DecodeActivity", "INFO_OUTPUT_BUFFERS_CHANGED");
+                        Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
                         outputBuffers = mDecoder.getOutputBuffers();
                         break;
 
                     case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
                         MediaFormat format = mDecoder.getOutputFormat();
-                        Log.d("DecodeActivity", "New format " + format);
+                        Log.d(TAG, "New format " + format);
                         audioTrack.setPlaybackRate(format.getInteger(MediaFormat.KEY_SAMPLE_RATE));
 
                         break;
                     case MediaCodec.INFO_TRY_AGAIN_LATER:
-                        Log.d("DecodeActivity", "dequeueOutputBuffer timed out!");
+                        Log.d(TAG, "dequeueOutputBuffer timed out!");
                         break;
 
                     default:
                         ByteBuffer outBuffer = outputBuffers[outIndex];
-                        Log.v("DecodeActivity",
+                        Log.v(TAG,
                             "We can't use this buffer but render it due to the API limit, " +
                                 outBuffer);
 
@@ -236,7 +235,7 @@ public class AudioExtractorDecoder extends Thread
                 // All decoded frames have been rendered, we can stop playing now
                 if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0)
                 {
-                    Log.d("DecodeActivity", "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
+                    Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
                     break;
                 }
             }
@@ -256,6 +255,6 @@ public class AudioExtractorDecoder extends Thread
 
     public void close()
     {
-        eosReceived = true;
+        mEosReceived = true;
     }
 }

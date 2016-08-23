@@ -1,5 +1,6 @@
 package com.steinwurf.petro;
 
+import android.content.Intent;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -9,11 +10,10 @@ import android.view.SurfaceView;
 
 import java.io.File;
 
-public class VideoActivity extends AppCompatActivity
+public class VideoActivity extends FullscreenActivity
     implements NativeInterface.NativeInterfaceListener, SurfaceHolder.Callback
 {
     private static final String TAG = "VideoActivity";
-    private static final String MP4_FILE = Environment.getExternalStorageDirectory() + "/bunny.mp4";
 
     private VideoDecoder mVideoDecoder;
 
@@ -22,23 +22,18 @@ public class VideoActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.video_activity);
-        SurfaceView surfaceView = (SurfaceView) findViewById(R.id.surfaceView);
-        surfaceView.getHolder().addCallback(this);
+
+        Intent intent = getIntent();
+        String filePath = intent.getStringExtra(MainActivity.FILEPATH);
 
         NativeInterface.setNativeInterfaceListener(this);
-        Log.d(TAG, MP4_FILE);
-        File file = new File(MP4_FILE);
-        if (file.exists())
-        {
-            Log.d(TAG, "file exists");
-        }
-        else
-        {
-            Log.d(TAG, "file does not exists");
-        }
-
-        NativeInterface.nativeInitialize(MP4_FILE);
+        NativeInterface.nativeInitialize(filePath);
         mVideoDecoder = new VideoDecoder();
+
+        SurfaceView surfaceView = (SurfaceView) findViewById(R.id.surfaceView);
+        fillAspectRatio(surfaceView, NativeInterface.getVideoWidth(),
+                        NativeInterface.getVideoHeight());
+        surfaceView.getHolder().addCallback(this);
     }
 
     @Override
