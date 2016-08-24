@@ -15,7 +15,6 @@ public class MainActivity extends AppCompatActivity
 {
     private static final String TAG = "MainActivity";
     private static final int ACTIVITY_CHOOSE_FILE = 1;
-    private static final String ACTIVITY_NAME = "ACTIVITY_NAME";
     public static final String FILEPATH = "FILEPATH";
 
     private Class<?> mTargetActivity;
@@ -125,8 +124,7 @@ public class MainActivity extends AppCompatActivity
             ActivityCompat.requestPermissions(
                 activity,
                 PERMISSIONS_STORAGE,
-                REQUEST_EXTERNAL_STORAGE
-            );
+                REQUEST_EXTERNAL_STORAGE);
         }
     }
 }
