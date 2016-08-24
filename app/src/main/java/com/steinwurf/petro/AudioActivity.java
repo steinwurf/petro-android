@@ -2,6 +2,7 @@ package com.steinwurf.petro;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.MediaCodec;
 import android.os.Environment;
@@ -22,9 +23,7 @@ import java.util.ArrayList;
 public class AudioActivity extends AppCompatActivity
     implements NativeInterface.NativeInterfaceListener
 {
-
     private static final String TAG = "AudioActivity";
-    private static final String MP4_FILE = Environment.getExternalStorageDirectory() + "/bunny.mp4";
 
     private AudioDecoder mAudioDecoder;
 
@@ -33,20 +32,12 @@ public class AudioActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
 
-        NativeInterface.setNativeInterfaceListener(this);
-        Log.d(TAG, MP4_FILE);
-        File file = new File(MP4_FILE);
-        if (file.exists())
-        {
-            Log.d(TAG, "file exists");
-        }
-        else
-        {
-            Log.d(TAG, "file does not exists");
-        }
+        Intent intent = getIntent();
+        String filePath = intent.getStringExtra(MainActivity.FILEPATH);
 
+        NativeInterface.setNativeInterfaceListener(this);
         mAudioDecoder = new AudioDecoder();
-        NativeInterface.nativeInitialize(MP4_FILE);
+        NativeInterface.nativeInitialize(filePath);
     }
 
     @Override
