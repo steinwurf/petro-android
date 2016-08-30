@@ -14,7 +14,6 @@ project_name = 'petro-android'
 project_dependencies = [
     'waf-tools',
     'petro',
-    'sak',
 ]
 
 # Importing a dynamically generated module
