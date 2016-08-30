@@ -51,6 +51,16 @@ def configure(properties):
 
     run_command(command)
 
+    # Install the Android build-tools version that is used in app/build.gradle
+    command = 'echo y | $ANDROID_HOME/tools/android update sdk --all '
+              '--filter build-tools-23.0.0 --no-ui'
+    run_command(command, shell=True)
+
+    # The required Android compileSdkVersion is specified in app/build.gradle
+    command = 'echo y | $ANDROID_HOME/tools/android update sdk --all '
+              '--filter android-23 --no-ui'
+    run_command(command, shell=True)
+
     # Make sure that the previously built APK and the build folder are deleted
     if properties.get('build_distclean'):
         run_command(['./gradlew', 'clean'])
