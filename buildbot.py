@@ -10,10 +10,10 @@ import subprocess
 project_name = 'petro-android'
 
 
-def run_command(args):
+def run_command(args, shell=False):
     print("Running: {}".format(args))
     sys.stdout.flush()
-    subprocess.check_call(args)
+    subprocess.check_call(args, shell=shell)
 
 
 def get_tool_options(properties):
@@ -70,7 +70,9 @@ def run_tests(properties):
     run_command(command)
 
     # Gradle installs the APK on the target device
-    run_command(['./gradlew', 'installDebug'])
+    command = 'ANDROID_SERIAL={0} ./gradlew installDebug'.format(
+        properties['tool_options']['device_id'])
+    run_command(command, shell=True)
 
 
 def install(properties):
