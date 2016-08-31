@@ -36,6 +36,10 @@ def configure(properties):
     if properties.get('build_distclean'):
         command += ['distclean']
 
+    # Make sure that the previously built APK and the build folder are deleted
+    if properties.get('build_distclean'):
+        run_command(['./gradlew', 'clean'])
+
     command += ['configure', '--git-protocol=git@']
 
     if 'waf_bundle_path' in properties:
@@ -60,10 +64,6 @@ def configure(properties):
     command = 'echo y | $ANDROID_HOME/tools/android update sdk --all ' \
               '--filter android-23 --no-ui'
     run_command(command, shell=True)
-
-    # Make sure that the previously built APK and the build folder are deleted
-    if properties.get('build_distclean'):
-        run_command(['./gradlew', 'clean'])
 
 
 def build(properties):
