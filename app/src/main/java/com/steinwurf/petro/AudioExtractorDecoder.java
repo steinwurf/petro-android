@@ -1,3 +1,8 @@
+// Copyright (c) 2014 Steinwurf ApS
+// All Rights Reserved
+//
+// Distributed under the "BSD License". See the accompanying LICENSE.rst file.
+
 /*
  * Copyright (C) 2014 The Android Open Source Project
  *
