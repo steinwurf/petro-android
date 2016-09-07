@@ -43,8 +43,8 @@ and built with waf. This should be done outside Android Studio.
 See our detailed description for configuring and using the Android SDK and the
 standalone toolchain: http://docs.steinwurf.com/cross_compile.html#android
 
-If you already set up your `PATH` to point the SDK and toolchain binaries, then
-you can configure this project with a simple command::
+If you already set up your ``PATH`` to point the SDK and toolchain binaries,
+then you can configure this project with a simple command::
 
     python waf configure --cxx_mkspec=cxx_android_gxx49_armv7
 
@@ -58,7 +58,9 @@ application.
 
 Note that the ``app/build.gradle`` file contains a pre-build step that will run
 ``python waf build`` before each build within Android Studio to make sure that
-the native library is always up-to-date. If you clean (or rebuild) the project
-in Android Studio, then you have to repeat the waf configure step, because the
-build folder is removed when the project is cleaned.
+the native library is always up-to-date.
+
+If you clean (or rebuild) the project in Android Studio, then you have to
+repeat the waf configure step, because the build folder is removed when the
+project is cleaned.
 
