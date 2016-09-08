@@ -11,22 +11,17 @@ Each Activity implements a different solution, either using the Android
 MediaExtractor component or Steinwurf's `petro library <https://github.com/steinwurf/petro>`_
 to extract AAC and H264 samples from a local mp4 file.
 
-- MainActivity: A frontend for choosing a media file and the actual playback
+* MainActivity: A frontend for choosing a media file and the actual playback
   Activity.
-
-- VideoExtractorActivity: The video samples are extracted with the Android
+* VideoExtractorActivity: The video samples are extracted with the Android
   MediaExtractor and played with a MediaCodec decoder.
-
-- VideoActivity: The H264 video samples are extracted with the petro library
+* VideoActivity: The H264 video samples are extracted with the petro library
   and played with a MediaCodec decoder.
-
-- AudioExtractorActivity: The audio samples are extracted with the Android
+* AudioExtractorActivity: The audio samples are extracted with the Android
   MediaExtractor and played with a MediaCodec decoder and an AudioTrack object.
-
-- AudioActivity: The AAC video samples are extracted with the petro library
+* AudioActivity: The AAC video samples are extracted with the petro library
   and played with a MediaCodec decoder and an AudioTrack object.
-
-- BothActivity: A combination of VideoActivity and AudioActivity, where the
+* BothActivity: A combination of VideoActivity and AudioActivity, where the
   petro library is used to extract H264 and AAC samples in parallel. Two
   separate decoders are used to play the video and audio.
 
