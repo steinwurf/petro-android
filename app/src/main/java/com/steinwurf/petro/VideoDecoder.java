@@ -46,6 +46,8 @@ public class VideoDecoder extends Thread
             Log.e(TAG, "Can't create format!");
             return false;
         }
+        Log.d(TAG, "sps: " + sps.length);
+        Log.d(TAG, "pps: " + pps.length);
 
         format.setByteBuffer("csd-0", ByteBuffer.wrap(sps));
         format.setByteBuffer("csd-1", ByteBuffer.wrap(pps));
@@ -66,14 +68,13 @@ public class VideoDecoder extends Thread
         ByteBuffer[] inputBuffers = mDecoder.getInputBuffers();
         mDecoder.getOutputBuffers();
         BufferInfo info = new BufferInfo();
-
         long startWhen = System.currentTimeMillis();
         while (!mEosReceived)
         {
             int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
             if (inputIndex >= 0)
             {
-                if (NativeInterface.advanceVideo())
+                if (!NativeInterface.videoAtEnd())
                 {
                     // fill inputBuffers[inputBufferIndex] with valid data
                     ByteBuffer inputBuffer = inputBuffers[inputIndex];
@@ -85,6 +86,7 @@ public class VideoDecoder extends Thread
                     int sampleSize = data.length;
 
                     mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
+                    NativeInterface.advanceVideo();
                 }
                 else
                 {

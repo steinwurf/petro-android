@@ -6,4 +6,4 @@ every change, see the Git log.
 
 Latest
 ------
-* tbd
+* Major: Use petro version 5

@@ -94,7 +94,7 @@ public class AudioDecoder extends Thread
             int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
             if (inputIndex >= 0)
             {
-                if (NativeInterface.advanceAudio())
+                if (!NativeInterface.audioAtEnd())
                 {
                     // fill inputBuffers[inputBufferIndex] with valid data
                     ByteBuffer inputBuffer = inputBuffers[inputIndex];
@@ -106,6 +106,7 @@ public class AudioDecoder extends Thread
                     sampleTime += NativeInterface.getAudioPresentationTime() * 1000;
 
                     mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
+                    NativeInterface.advanceAudio();
                 }
                 else
                 {
