@@ -73,7 +73,7 @@ public class VideoDecoder extends Thread
             int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
             if (inputIndex >= 0)
             {
-                if (NativeInterface.advanceVideo())
+                if (!NativeInterface.videoAtEnd())
                 {
                     // fill inputBuffers[inputBufferIndex] with valid data
                     ByteBuffer inputBuffer = inputBuffers[inputIndex];
@@ -85,6 +85,7 @@ public class VideoDecoder extends Thread
                     int sampleSize = data.length;
 
                     mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
+                    NativeInterface.advanceVideo();
                 }
                 else
                 {
