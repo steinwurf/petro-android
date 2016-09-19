@@ -46,8 +46,6 @@ public class VideoDecoder extends Thread
             Log.e(TAG, "Can't create format!");
             return false;
         }
-        Log.d(TAG, "sps: " + sps.length);
-        Log.d(TAG, "pps: " + pps.length);
 
         format.setByteBuffer("csd-0", ByteBuffer.wrap(sps));
         format.setByteBuffer("csd-1", ByteBuffer.wrap(pps));
@@ -68,6 +66,7 @@ public class VideoDecoder extends Thread
         ByteBuffer[] inputBuffers = mDecoder.getInputBuffers();
         mDecoder.getOutputBuffers();
         BufferInfo info = new BufferInfo();
+
         long startWhen = System.currentTimeMillis();
         while (!mEosReceived)
         {
