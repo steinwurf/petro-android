@@ -75,9 +75,9 @@ jbyteArray Java_com_steinwurf_petro_NativeInterface_getPPS(
 {
     LOGI << "Java_com_steinwurf_petro_NativeInterface_getPPS";
     std::vector<uint8_t> pps =
-    {
-        0, 0, 0, 1
-    };
+        {
+            0, 0, 0, 1
+        };
     auto pps_data = video->pps_data();
     auto pps_size = video->pps_size();
     pps.insert(pps.end(), pps_data, pps_data + pps_size);
@@ -93,9 +93,9 @@ jbyteArray Java_com_steinwurf_petro_NativeInterface_getSPS(
 {
     LOGI << "Java_com_steinwurf_petro_NativeInterface_getSPS";
     std::vector<uint8_t> sps =
-    {
-        0, 0, 0, 1
-    };
+        {
+            0, 0, 0, 1
+        };
     auto sps_data = video->sps_data();
     auto sps_size = video->sps_size();
     sps.insert(sps.end(), sps_data, sps_data + sps_size);
