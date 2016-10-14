@@ -183,7 +183,7 @@ jboolean Java_com_steinwurf_petro_NativeInterface_audioAtEnd(
 jint Java_com_steinwurf_petro_NativeInterface_getAudioPresentationTime(
     JNIEnv* /*env*/, jobject /*thiz*/)
 {
-    return audio->timestamp();
+    return audio->presentation_timestamp();
 }
 
 jbyteArray Java_com_steinwurf_petro_NativeInterface_getAudioSample(
