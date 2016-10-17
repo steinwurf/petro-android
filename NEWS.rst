@@ -6,4 +6,4 @@ every change, see the Git log.
 
 Latest
 ------
-* Major: Use petro version 5
+* Major: Use petro version 6
