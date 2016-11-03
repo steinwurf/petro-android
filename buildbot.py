@@ -57,12 +57,12 @@ def configure(properties):
 
     # Install the Android build-tools version that is used in app/build.gradle
     command = 'echo y | $ANDROID_HOME/tools/android update sdk --all ' \
-              '--filter build-tools-24.0.2 --no-ui'
+              '--filter build-tools-24.0.3 --no-ui'
     run_command(command, shell=True)
 
     # The required Android compileSdkVersion is specified in app/build.gradle
     command = 'echo y | $ANDROID_HOME/tools/android update sdk --all ' \
-              '--filter android-23 --no-ui'
+              '--filter android-24 --no-ui'
     run_command(command, shell=True)
 
 

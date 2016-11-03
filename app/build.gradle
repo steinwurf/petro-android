@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "24.0.2"
+    compileSdkVersion 24
+    buildToolsVersion "24.0.3"
 
     defaultConfig {
         applicationId "com.steinwurf.petro"
         minSdkVersion 16
-        targetSdkVersion 23
+        targetSdkVersion 24
         versionCode 1
         versionName "1.0"
     }
@@ -17,14 +17,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-}
-
-clean.doLast {
-    def proc = "python waf clean".execute()
-    proc.waitFor()
-    println "stderr: ${proc.err.text}"
-    println "stdout: ${proc.in.text}"
-    println "return code: ${proc.exitValue()}"
 }
 
 preBuild.doFirst {
