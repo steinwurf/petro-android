@@ -24,10 +24,16 @@ public class AudioDecoder extends Thread
     private static final String MIME = "audio/mp4a-latm";
 
     private MediaCodec mDecoder;
+    AudioTrack mAudioTrack;
 
     private boolean mEosReceived;
 
-    AudioTrack mAudioTrack;
+    private long mLastSleepTime = 0;
+
+    long lastSleepTime()
+    {
+        return mLastSleepTime;
+    }
 
     public boolean init(int audioProfile, int sampleRateIndex, int channelCount)
     {
@@ -88,6 +94,7 @@ public class AudioDecoder extends Thread
         mAudioTrack.play();
 
         long sampleTime = 0;
+        long startTime = System.currentTimeMillis();
 
         while (!mEosReceived)
         {
@@ -135,6 +142,10 @@ public class AudioDecoder extends Thread
                     break;
 
                 default:
+
+                    long playTime = System.currentTimeMillis() - startTime;
+                    long sleepTime = (info.presentationTimeUs / 1000) - playTime;
+                    mLastSleepTime = sleepTime;
 
                     ByteBuffer outBuffer = outputBuffers[outIndex];
                     final byte[] chunk = new byte[info.size];
