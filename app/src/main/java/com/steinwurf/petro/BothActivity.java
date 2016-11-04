@@ -153,7 +153,47 @@ public class BothActivity extends FullscreenActivity
                 {
                     if (mVideoDecoder != null)
                     {
-                        return "PlayTime:   " + mVideoDecoder.lastPlayTime() + "ms";
+                        return "PlayTime  : " + mVideoDecoder.lastPlayTime() + "ms";
+                    }
+
+                    return "";
+                }
+            }
+        );
+
+        mDebugOverlay.addDebugOverlayLineConstructor(
+            new DebugOverlay.DebugOverlayLineConstructor()
+            {
+                @Override
+                public String constructLine()
+                {
+                    long audio = 0;
+                    long video = 0;
+
+                    if (mAudioDecoder != null)
+                    {
+                        audio = mAudioDecoder.frameDrops();
+                    }
+
+                    if (mVideoDecoder != null)
+                    {
+                        video = mVideoDecoder.frameDrops();
+                    }
+
+                    return "FrameDrops: " + String.format("%d/%d A/V", audio, video);
+                }
+            }
+        );
+
+        mDebugOverlay.addDebugOverlayLineConstructor(
+            new DebugOverlay.DebugOverlayLineConstructor()
+            {
+                @Override
+                public String constructLine()
+                {
+                    if (mAudioDecoder != null)
+                    {
+                        return "AudioSleep: " + mAudioDecoder.lastSleepTime() + " ms";
                     }
 
                     return "";
@@ -169,25 +209,8 @@ public class BothActivity extends FullscreenActivity
                 {
                     if (mVideoDecoder != null)
                     {
-                        return "SleepTime:  " + mVideoDecoder.lastSleepTime() + "ms";
+                        return "VideoSleep: " + mVideoDecoder.lastSleepTime() + " ms";
                     }
-
-                    return "";
-                }
-            }
-        );
-
-        mDebugOverlay.addDebugOverlayLineConstructor(
-            new DebugOverlay.DebugOverlayLineConstructor()
-            {
-                @Override
-                public String constructLine()
-                {
-                    if (mVideoDecoder != null)
-                    {
-                        return "FrameDrops: " + mVideoDecoder.frameDrops();
-                    }
-
                     return "";
                 }
             }

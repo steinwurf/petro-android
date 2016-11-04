@@ -29,10 +29,16 @@ public class AudioDecoder extends Thread
     private boolean mEosReceived;
 
     private long mLastSleepTime = 0;
+    private long mFrameDrops = 0;
 
-    long lastSleepTime()
+    public long lastSleepTime()
     {
         return mLastSleepTime;
+    }
+
+    public long frameDrops()
+    {
+        return mFrameDrops;
     }
 
     public boolean init(int audioProfile, int sampleRateIndex, int channelCount)
@@ -93,7 +99,6 @@ public class AudioDecoder extends Thread
 
         mAudioTrack.play();
 
-        long sampleTime = 0;
         long startTime = System.currentTimeMillis();
 
         while (!mEosReceived)
@@ -106,11 +111,11 @@ public class AudioDecoder extends Thread
                     // fill inputBuffers[inputBufferIndex] with valid data
                     ByteBuffer inputBuffer = inputBuffers[inputIndex];
 
+                    long sampleTime = NativeInterface.getAudioPresentationTime();
                     byte[] data = NativeInterface.getAudioSample();
                     inputBuffer.clear();
                     inputBuffer.put(data);
                     int sampleSize = data.length;
-                    sampleTime += NativeInterface.getAudioPresentationTime() * 1000;
 
                     mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
                     NativeInterface.advanceAudio();
@@ -147,11 +152,31 @@ public class AudioDecoder extends Thread
                     long sleepTime = (info.presentationTimeUs / 1000) - playTime;
                     mLastSleepTime = sleepTime;
 
-                    ByteBuffer outBuffer = outputBuffers[outIndex];
-                    final byte[] chunk = new byte[info.size];
-                    outBuffer.get(chunk);
-                    outBuffer.clear();
-                    mAudioTrack.write(chunk, info.offset, info.offset + info.size);
+                    if (sleepTime > 0)
+                    {
+                        try
+                        {
+                            Thread.sleep(sleepTime);
+                        }
+                        catch (InterruptedException e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    // Drop the buffer if it is late by more than 30 ms
+                    if (sleepTime < -30)
+                    {
+                        mFrameDrops++;
+                    }
+                    else
+                    {
+                        ByteBuffer outBuffer = outputBuffers[outIndex];
+                        final byte[] chunk = new byte[info.size];
+                        outBuffer.get(chunk);
+                        outBuffer.clear();
+                        mAudioTrack.write(chunk, info.offset, info.offset + info.size);
+                    }
                     mDecoder.releaseOutputBuffer(outIndex, false);
                     break;
             }
