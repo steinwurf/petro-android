@@ -88,24 +88,31 @@ public class VideoDecoder extends Thread
         long startTime = System.currentTimeMillis();
         while (!mEosReceived)
         {
-            int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
-            if (inputIndex >= 0)
+            // Fill up as many input buffers as possible
+            while (!NativeInterface.videoAtEnd())
             {
-                if (!NativeInterface.videoAtEnd())
-                {
-                    // fill inputBuffers[inputBufferIndex] with valid data
-                    ByteBuffer inputBuffer = inputBuffers[inputIndex];
+                int inputIndex = mDecoder.dequeueInputBuffer(0);
 
-                    long sampleTime = NativeInterface.getVideoPresentationTime();
-                    byte[] data = NativeInterface.getVideoSample();
-                    inputBuffer.clear();
-                    inputBuffer.put(data);
-                    int sampleSize = data.length;
+                if (inputIndex < 0)
+                    break;
 
-                    mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
-                    NativeInterface.advanceVideo();
-                }
-                else
+                // fill inputBuffers[inputBufferIndex] with valid data
+                ByteBuffer inputBuffer = inputBuffers[inputIndex];
+
+                long sampleTime = NativeInterface.getVideoPresentationTime();
+                byte[] data = NativeInterface.getVideoSample();
+                inputBuffer.clear();
+                inputBuffer.put(data);
+                int sampleSize = data.length;
+
+                mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
+                NativeInterface.advanceVideo();
+            }
+
+            if (NativeInterface.videoAtEnd())
+            {
+                int inputIndex = mDecoder.dequeueInputBuffer(0);
+                if (inputIndex >= 0)
                 {
                     Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
                     mDecoder.queueInputBuffer(inputIndex, 0, 0, 0,
@@ -150,9 +157,9 @@ public class VideoDecoder extends Thread
                     mDecoder.releaseOutputBuffer(outIndex, true);
                 }
 
-                Log.d(TAG,
-                    "playTime: " + playTime + " " +
-                    "sleepTime : " + sleepTime);
+//                Log.d(TAG,
+//                    "playTime: " + playTime + " " +
+//                    "sleepTime : " + sleepTime);
             }
 
             if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0)
