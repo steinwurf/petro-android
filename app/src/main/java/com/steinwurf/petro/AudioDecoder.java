@@ -27,13 +27,30 @@ public class AudioDecoder extends Thread
     AudioTrack mAudioTrack;
 
     private boolean mEosReceived;
-
+    private long mStartTime = System.currentTimeMillis();
     private long mLastSleepTime = 0;
+    private long mLastPlayTime = 0;
+    private long mLastSampleTime = 0;
     private long mFrameDrops = 0;
+
+    public void setStartTime(long startTime)
+    {
+        this.mStartTime = startTime;
+    }
 
     public long lastSleepTime()
     {
         return mLastSleepTime;
+    }
+
+    public long lastPlayTime()
+    {
+        return mLastPlayTime;
+    }
+
+    public long lastSampleTime()
+    {
+        return mLastSampleTime;
     }
 
     public long frameDrops()
@@ -99,7 +116,7 @@ public class AudioDecoder extends Thread
 
         mAudioTrack.play();
 
-        long startTime = System.currentTimeMillis();
+        //Log.d(TAG, "Audio start time: " + System.currentTimeMillis());
 
         while (!mEosReceived)
         {
@@ -143,14 +160,16 @@ public class AudioDecoder extends Thread
                     break;
 
                 case MediaCodec.INFO_TRY_AGAIN_LATER:
-                    Log.d(TAG, "INFO_TRY_AGAIN_LATER");
                     break;
 
                 default:
 
-                    long playTime = System.currentTimeMillis() - startTime;
+                    long playTime = System.currentTimeMillis() - mStartTime;
                     long sleepTime = (info.presentationTimeUs / 1000) - playTime;
+
+                    mLastPlayTime = playTime;
                     mLastSleepTime = sleepTime;
+                    mLastSampleTime = info.presentationTimeUs / 1000;
 
                     if (sleepTime > 0)
                     {

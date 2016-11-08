@@ -63,6 +63,9 @@ public class VideoActivity extends FullscreenActivity
                 NativeInterface.getSPS(),
                 NativeInterface.getPPS()))
             {
+                // A 500 ms warm-up time prevents frame drops at the start of playback
+                long startTime = System.currentTimeMillis() + 500;
+                mVideoDecoder.setStartTime(startTime);
                 mVideoDecoder.start();
             }
             else

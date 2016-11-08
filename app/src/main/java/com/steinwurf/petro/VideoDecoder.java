@@ -24,9 +24,16 @@ public class VideoDecoder extends Thread
     private MediaCodec mDecoder;
 
     private boolean mEosReceived;
+    private long mStartTime = System.currentTimeMillis();
     private long mLastSleepTime = 0;
     private long mLastPlayTime = 0;
+    private long mLastSampleTime = 0;
     private long mFrameDrops = 0;
+
+    public void setStartTime(long startTime)
+    {
+        this.mStartTime = startTime;
+    }
 
     long lastSleepTime()
     {
@@ -36,6 +43,11 @@ public class VideoDecoder extends Thread
     public long lastPlayTime()
     {
         return mLastPlayTime;
+    }
+
+    public long lastSampleTime()
+    {
+        return mLastSampleTime;
     }
 
     public long frameDrops()
@@ -85,7 +97,8 @@ public class VideoDecoder extends Thread
         mDecoder.getOutputBuffers();
         BufferInfo info = new BufferInfo();
 
-        long startTime = System.currentTimeMillis();
+        //Log.d(TAG, "Video start time: " + System.currentTimeMillis());
+
         while (!mEosReceived)
         {
             // Fill up as many input buffers as possible
@@ -126,11 +139,12 @@ public class VideoDecoder extends Thread
 
             if (outIndex >= 0)
             {
-                long playTime = System.currentTimeMillis() - startTime;
+                long playTime = System.currentTimeMillis() - mStartTime;
                 long sleepTime = (info.presentationTimeUs / 1000) - playTime;
 
                 mLastPlayTime = playTime;
                 mLastSleepTime = sleepTime;
+                mLastSampleTime = info.presentationTimeUs / 1000;
 
                 if (sleepTime > 0)
                 {
@@ -156,10 +170,6 @@ public class VideoDecoder extends Thread
                     // true indicates that the frame should be rendered
                     mDecoder.releaseOutputBuffer(outIndex, true);
                 }
-
-//                Log.d(TAG,
-//                    "playTime: " + playTime + " " +
-//                    "sleepTime : " + sleepTime);
             }
 
             if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0)
@@ -178,6 +188,4 @@ public class VideoDecoder extends Thread
     {
         mEosReceived = true;
     }
-
-
 }

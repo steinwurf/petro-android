@@ -79,6 +79,10 @@ public class BothActivity extends FullscreenActivity
                     NativeInterface.getAudioSampleRate(),
                     NativeInterface.getAudioChannelCount()))
             {
+                // A 500 ms warm-up time prevents frame drops at the start of playback
+                long startTime = System.currentTimeMillis() + 500;
+                mVideoDecoder.setStartTime(startTime);
+                mAudioDecoder.setStartTime(startTime);
                 mVideoDecoder.start();
                 mAudioDecoder.start();
             }
@@ -153,10 +157,34 @@ public class BothActivity extends FullscreenActivity
                 {
                     if (mVideoDecoder != null)
                     {
-                        return "PlayTime  : " + mVideoDecoder.lastPlayTime() + "ms";
+                        return "PlayTime   : " + mVideoDecoder.lastPlayTime() + " ms";
                     }
 
                     return "";
+                }
+            }
+        );
+
+        mDebugOverlay.addDebugOverlayLineConstructor(
+            new DebugOverlay.DebugOverlayLineConstructor()
+            {
+                @Override
+                public String constructLine()
+                {
+                    long audio = 0;
+                    long video = 0;
+
+                    if (mAudioDecoder != null)
+                    {
+                        audio = mAudioDecoder.lastSampleTime();
+                    }
+
+                    if (mVideoDecoder != null)
+                    {
+                        video = mVideoDecoder.lastSampleTime();
+                    }
+
+                    return "AudioOffset: " + (audio - video) + " ms";
                 }
             }
         );
@@ -180,7 +208,7 @@ public class BothActivity extends FullscreenActivity
                         video = mVideoDecoder.frameDrops();
                     }
 
-                    return "FrameDrops: " + String.format("%d/%d A/V", audio, video);
+                    return "FrameDrops : " + String.format("%d/%d A/V", audio, video);
                 }
             }
         );
@@ -193,7 +221,7 @@ public class BothActivity extends FullscreenActivity
                 {
                     if (mAudioDecoder != null)
                     {
-                        return "AudioSleep: " + mAudioDecoder.lastSleepTime() + " ms";
+                        return "AudioSleep : " + mAudioDecoder.lastSleepTime() + " ms";
                     }
 
                     return "";
@@ -209,7 +237,7 @@ public class BothActivity extends FullscreenActivity
                 {
                     if (mVideoDecoder != null)
                     {
-                        return "VideoSleep: " + mVideoDecoder.lastSleepTime() + " ms";
+                        return "VideoSleep : " + mVideoDecoder.lastSleepTime() + " ms";
                     }
                     return "";
                 }
