@@ -131,8 +131,21 @@ def build(bld):
 
     bld.load("wurf_common_tools")
 
-    bld.recurse('jni')
-
     bld.env.append_unique(
         'DEFINES_STEINWURF_VERSION',
         'STEINWURF_PETRO_ANDROID_VERSION="{}"'.format(VERSION))
+
+    bld.recurse('jni')
+
+    if bld.is_toplevel():
+
+        # Install the APK files from "app/build/outputs/apk"
+        if bld.has_tool_option('install_path'):
+            install_path = bld.get_tool_option('install_path')
+            install_path = os.path.abspath(os.path.expanduser(install_path))
+            start_dir = bld.path.find_dir('app/build/outputs/apk')
+            relative_dir = bld.bldnode.path_from(bld.srcnode)
+            bld.install_files(os.path.join(install_path, relative_dir),
+                              start_dir.ant_glob('*.apk'),
+                              cwd=start_dir)
+

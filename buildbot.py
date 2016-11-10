@@ -90,7 +90,14 @@ def run_tests(properties):
 
 
 def install(properties):
-    pass
+    command = [sys.executable, 'waf', '-v', 'install']
+
+    if 'install_path' in properties:
+        command += ['--install_path={0}'.format(properties['install_path'])]
+    if properties.get('install_relative'):
+        command += ['--install_relative']
+
+    run_command(command)
 
 
 def main():
