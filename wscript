@@ -131,11 +131,11 @@ def build(bld):
 
     bld.load("wurf_common_tools")
 
-    bld.recurse('jni')
-
     bld.env.append_unique(
         'DEFINES_STEINWURF_VERSION',
         'STEINWURF_PETRO_ANDROID_VERSION="{}"'.format(VERSION))
+
+    bld.recurse('jni')
 
     if bld.is_toplevel():
 
