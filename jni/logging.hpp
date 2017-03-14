@@ -40,7 +40,8 @@ public:
         m_stream << std::endl;
 
         // Output the log string the Android log at the appropriate level.
-        __android_log_print(m_severity, m_tag.c_str(), m_stream.str().c_str());
+        __android_log_print(m_severity, m_tag.c_str(), "%s",
+                            m_stream.str().c_str());
 
         // Indicate termination if needed.
         if (m_severity == ANDROID_LOG_FATAL)
