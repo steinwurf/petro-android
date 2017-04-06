@@ -9,7 +9,9 @@ import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.graphics.Point;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
@@ -35,18 +37,25 @@ public class FullscreenActivity extends Activity
 
         android.view.ViewGroup.LayoutParams layoutParams = surfaceView.getLayoutParams();
 
-        if (videoWidth > videoHeight)
+        int viewWidth = screen.x;
+        int viewHeight = screen.y;
+        double aspectRatio = (double) videoHeight / videoWidth;
+        Log.d(TAG, String.format("View: %d x %d", viewWidth, viewHeight));
+        Log.d(TAG, String.format("Video: %d x %d", videoWidth, videoHeight));
+
+        if (viewHeight > (int) (viewWidth * aspectRatio))
         {
-            // landscape
-            layoutParams.width = screen.x;
-            layoutParams.height = screen.x * videoHeight / videoWidth;
+            // limited by narrow width; restrict height
+            layoutParams.width = viewWidth;
+            layoutParams.height = (int) (viewWidth * aspectRatio);
         }
         else
         {
-            // portrait
-            layoutParams.width = screen.y * videoWidth / videoHeight;
-            layoutParams.height = screen.y;
+            // limited by short height; restrict width
+            layoutParams.width = (int) (viewHeight / aspectRatio);
+            layoutParams.height = viewHeight;
         }
+        Log.d(TAG, String.format("Layout: %d x %d", layoutParams.width, layoutParams.height));
 
         surfaceView.setLayoutParams(layoutParams);
     }

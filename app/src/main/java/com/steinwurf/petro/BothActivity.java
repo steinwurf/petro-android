@@ -6,12 +6,18 @@
 package com.steinwurf.petro;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.TextView;
 
 import java.io.File;
 
@@ -22,6 +28,8 @@ public class BothActivity extends FullscreenActivity
 
     private VideoDecoder mVideoDecoder;
     private AudioDecoder mAudioDecoder;
+
+    private DebugOverlay mDebugOverlay = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -41,6 +49,8 @@ public class BothActivity extends FullscreenActivity
         fillAspectRatio(surfaceView, NativeInterface.getVideoWidth(),
             NativeInterface.getVideoHeight());
         surfaceView.getHolder().addCallback(this);
+
+        setupDebugOverlay();
     }
 
     @Override
@@ -69,6 +79,10 @@ public class BothActivity extends FullscreenActivity
                     NativeInterface.getAudioSampleRate(),
                     NativeInterface.getAudioChannelCount()))
             {
+                // A 500 ms warm-up time prevents frame drops at the start of playback
+                long startTime = System.currentTimeMillis() + 500;
+                mVideoDecoder.setStartTime(startTime);
+                mAudioDecoder.setStartTime(startTime);
                 mVideoDecoder.start();
                 mAudioDecoder.start();
             }
@@ -98,5 +112,139 @@ public class BothActivity extends FullscreenActivity
     {
         super.onStop();
         NativeInterface.nativeFinalize();
+    }
+
+    private void setupDebugOverlay()
+    {
+        FrameLayout Frame = (FrameLayout) findViewById(R.id.frame);
+        final TextView textView = new TextView(this);
+        textView.setTextColor(Color.WHITE);
+        textView.setTextSize(15);
+        textView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        textView.setBackgroundColor(0x88000000);
+        textView.setPadding(10, 10, 10, 10);
+        Frame.addView(
+            textView,
+            new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.START));
+        mDebugOverlay = new DebugOverlay();
+
+        mDebugOverlay.setDebugInfoHandler(
+            new DebugOverlay.DebugInfoHandler()
+            {
+                @Override
+                public void handle(final String debugInfo)
+                {
+                    runOnUiThread(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            textView.setText(debugInfo);
+                        }
+                    });
+                }
+            }
+        );
+
+        mDebugOverlay.addDebugOverlayLineConstructor(
+            new DebugOverlay.DebugOverlayLineConstructor()
+            {
+                @Override
+                public String constructLine()
+                {
+                    if (mVideoDecoder != null)
+                    {
+                        return "PlayTime   : " + mVideoDecoder.lastPlayTime() + " ms";
+                    }
+
+                    return "";
+                }
+            }
+        );
+
+        mDebugOverlay.addDebugOverlayLineConstructor(
+            new DebugOverlay.DebugOverlayLineConstructor()
+            {
+                @Override
+                public String constructLine()
+                {
+                    long audio = 0;
+                    long video = 0;
+
+                    if (mAudioDecoder != null)
+                    {
+                        audio = mAudioDecoder.lastSampleTime();
+                    }
+
+                    if (mVideoDecoder != null)
+                    {
+                        video = mVideoDecoder.lastSampleTime();
+                    }
+
+                    return "AudioOffset: " + (audio - video) + " ms";
+                }
+            }
+        );
+
+        mDebugOverlay.addDebugOverlayLineConstructor(
+            new DebugOverlay.DebugOverlayLineConstructor()
+            {
+                @Override
+                public String constructLine()
+                {
+                    long audio = 0;
+                    long video = 0;
+
+                    if (mAudioDecoder != null)
+                    {
+                        audio = mAudioDecoder.frameDrops();
+                    }
+
+                    if (mVideoDecoder != null)
+                    {
+                        video = mVideoDecoder.frameDrops();
+                    }
+
+                    return "FrameDrops : " + String.format("%d/%d A/V", audio, video);
+                }
+            }
+        );
+
+        mDebugOverlay.addDebugOverlayLineConstructor(
+            new DebugOverlay.DebugOverlayLineConstructor()
+            {
+                @Override
+                public String constructLine()
+                {
+                    if (mAudioDecoder != null)
+                    {
+                        return "AudioSleep : " + mAudioDecoder.lastSleepTime() + " ms";
+                    }
+
+                    return "";
+                }
+            }
+        );
+
+        mDebugOverlay.addDebugOverlayLineConstructor(
+            new DebugOverlay.DebugOverlayLineConstructor()
+            {
+                @Override
+                public String constructLine()
+                {
+                    if (mVideoDecoder != null)
+                    {
+                        return "VideoSleep : " + mVideoDecoder.lastSleepTime() + " ms";
+                    }
+                    return "";
+                }
+            }
+        );
+
+
+        mDebugOverlay.start();
     }
 }

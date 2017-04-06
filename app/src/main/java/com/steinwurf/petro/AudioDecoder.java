@@ -24,10 +24,39 @@ public class AudioDecoder extends Thread
     private static final String MIME = "audio/mp4a-latm";
 
     private MediaCodec mDecoder;
+    AudioTrack mAudioTrack;
 
     private boolean mEosReceived;
+    private long mStartTime = System.currentTimeMillis();
+    private long mLastSleepTime = 0;
+    private long mLastPlayTime = 0;
+    private long mLastSampleTime = 0;
+    private long mFrameDrops = 0;
 
-    AudioTrack mAudioTrack;
+    public void setStartTime(long startTime)
+    {
+        this.mStartTime = startTime;
+    }
+
+    public long lastSleepTime()
+    {
+        return mLastSleepTime;
+    }
+
+    public long lastPlayTime()
+    {
+        return mLastPlayTime;
+    }
+
+    public long lastSampleTime()
+    {
+        return mLastSampleTime;
+    }
+
+    public long frameDrops()
+    {
+        return mFrameDrops;
+    }
 
     public boolean init(int audioProfile, int sampleRateIndex, int channelCount)
     {
@@ -87,7 +116,7 @@ public class AudioDecoder extends Thread
 
         mAudioTrack.play();
 
-        long sampleTime = 0;
+        //Log.d(TAG, "Audio start time: " + System.currentTimeMillis());
 
         while (!mEosReceived)
         {
@@ -99,11 +128,11 @@ public class AudioDecoder extends Thread
                     // fill inputBuffers[inputBufferIndex] with valid data
                     ByteBuffer inputBuffer = inputBuffers[inputIndex];
 
+                    long sampleTime = NativeInterface.getAudioPresentationTime();
                     byte[] data = NativeInterface.getAudioSample();
                     inputBuffer.clear();
                     inputBuffer.put(data);
                     int sampleSize = data.length;
-                    sampleTime += NativeInterface.getAudioPresentationTime() * 1000;
 
                     mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
                     NativeInterface.advanceAudio();
@@ -131,16 +160,42 @@ public class AudioDecoder extends Thread
                     break;
 
                 case MediaCodec.INFO_TRY_AGAIN_LATER:
-                    Log.d(TAG, "INFO_TRY_AGAIN_LATER");
                     break;
 
                 default:
 
-                    ByteBuffer outBuffer = outputBuffers[outIndex];
-                    final byte[] chunk = new byte[info.size];
-                    outBuffer.get(chunk);
-                    outBuffer.clear();
-                    mAudioTrack.write(chunk, info.offset, info.offset + info.size);
+                    long playTime = System.currentTimeMillis() - mStartTime;
+                    long sleepTime = (info.presentationTimeUs / 1000) - playTime;
+
+                    mLastPlayTime = playTime;
+                    mLastSleepTime = sleepTime;
+                    mLastSampleTime = info.presentationTimeUs / 1000;
+
+                    if (sleepTime > 0)
+                    {
+                        try
+                        {
+                            Thread.sleep(sleepTime);
+                        }
+                        catch (InterruptedException e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    // Drop the buffer if it is late by more than 30 ms
+                    if (sleepTime < -30)
+                    {
+                        mFrameDrops++;
+                    }
+                    else
+                    {
+                        ByteBuffer outBuffer = outputBuffers[outIndex];
+                        final byte[] chunk = new byte[info.size];
+                        outBuffer.get(chunk);
+                        outBuffer.clear();
+                        mAudioTrack.write(chunk, info.offset, info.offset + info.size);
+                    }
                     mDecoder.releaseOutputBuffer(outIndex, false);
                     break;
             }

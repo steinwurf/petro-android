@@ -56,6 +56,8 @@ public class AudioActivity extends AppCompatActivity
                 NativeInterface.getAudioSampleRate(),
                 NativeInterface.getAudioChannelCount()))
             {
+                long startTime = System.currentTimeMillis();
+                mAudioDecoder.setStartTime(startTime);
                 mAudioDecoder.start();
             }
             else

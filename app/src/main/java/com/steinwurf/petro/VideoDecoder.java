@@ -24,6 +24,36 @@ public class VideoDecoder extends Thread
     private MediaCodec mDecoder;
 
     private boolean mEosReceived;
+    private long mStartTime = System.currentTimeMillis();
+    private long mLastSleepTime = 0;
+    private long mLastPlayTime = 0;
+    private long mLastSampleTime = 0;
+    private long mFrameDrops = 0;
+
+    public void setStartTime(long startTime)
+    {
+        this.mStartTime = startTime;
+    }
+
+    long lastSleepTime()
+    {
+        return mLastSleepTime;
+    }
+
+    public long lastPlayTime()
+    {
+        return mLastPlayTime;
+    }
+
+    public long lastSampleTime()
+    {
+        return mLastSampleTime;
+    }
+
+    public long frameDrops()
+    {
+        return mFrameDrops;
+    }
 
     public boolean init(Surface surface, byte[] sps, byte[] pps)
     {
@@ -67,27 +97,35 @@ public class VideoDecoder extends Thread
         mDecoder.getOutputBuffers();
         BufferInfo info = new BufferInfo();
 
-        long startWhen = System.currentTimeMillis();
+        //Log.d(TAG, "Video start time: " + System.currentTimeMillis());
+
         while (!mEosReceived)
         {
-            int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
-            if (inputIndex >= 0)
+            // Fill up as many input buffers as possible
+            while (!NativeInterface.videoAtEnd())
             {
-                if (!NativeInterface.videoAtEnd())
-                {
-                    // fill inputBuffers[inputBufferIndex] with valid data
-                    ByteBuffer inputBuffer = inputBuffers[inputIndex];
+                int inputIndex = mDecoder.dequeueInputBuffer(0);
 
-                    long sampleTime = NativeInterface.getVideoPresentationTime();
-                    byte[] data = NativeInterface.getVideoSample();
-                    inputBuffer.clear();
-                    inputBuffer.put(data);
-                    int sampleSize = data.length;
+                if (inputIndex < 0)
+                    break;
 
-                    mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
-                    NativeInterface.advanceVideo();
-                }
-                else
+                // fill inputBuffers[inputBufferIndex] with valid data
+                ByteBuffer inputBuffer = inputBuffers[inputIndex];
+
+                long sampleTime = NativeInterface.getVideoPresentationTime();
+                byte[] data = NativeInterface.getVideoSample();
+                inputBuffer.clear();
+                inputBuffer.put(data);
+                int sampleSize = data.length;
+
+                mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
+                NativeInterface.advanceVideo();
+            }
+
+            if (NativeInterface.videoAtEnd())
+            {
+                int inputIndex = mDecoder.dequeueInputBuffer(0);
+                if (inputIndex >= 0)
                 {
                     Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
                     mDecoder.queueInputBuffer(inputIndex, 0, 0, 0,
@@ -95,47 +133,45 @@ public class VideoDecoder extends Thread
                     mEosReceived = true;
                 }
             }
+
+            // Check if output is available
             int outIndex = mDecoder.dequeueOutputBuffer(info, TIMEOUT_US);
-            switch (outIndex)
+
+            if (outIndex >= 0)
             {
-                case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                    Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
-                    mDecoder.getOutputBuffers();
-                    break;
+                long playTime = System.currentTimeMillis() - mStartTime;
+                long sleepTime = (info.presentationTimeUs / 1000) - playTime;
 
-                case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                    MediaFormat format = mDecoder.getOutputFormat();
-                    Log.d(TAG, "INFO_OUTPUT_FORMAT_CHANGED format : " + format);
-                    break;
+                mLastPlayTime = playTime;
+                mLastSleepTime = sleepTime;
+                mLastSampleTime = info.presentationTimeUs / 1000;
 
-                case MediaCodec.INFO_TRY_AGAIN_LATER:
-                    Log.d(TAG, "INFO_TRY_AGAIN_LATER");
-                    break;
-
-                default:
-
+                if (sleepTime > 0)
+                {
                     try
                     {
-                        long sleepTime = (info.presentationTimeUs / 1000) -
-                            (System.currentTimeMillis() - startWhen);
-                        Log.d(TAG,
-                            "info.presentationTimeUs : " + (info.presentationTimeUs / 1000) + " " +
-                            "playTime: " + (System.currentTimeMillis() - startWhen) + " " +
-                            "sleepTime : " + sleepTime);
-
-                        if (sleepTime > 0)
-                            Thread.sleep(sleepTime);
+                        Thread.sleep(sleepTime);
                     }
                     catch (InterruptedException e)
                     {
                         e.printStackTrace();
                     }
+                }
 
+                //Log.d(TAG, "Output sample: " + info.presentationTimeUs);
+
+                if (sleepTime < -30)
+                {
+                    mDecoder.releaseOutputBuffer(outIndex, false);
+                    mFrameDrops++;
+                }
+                else
+                {
+                    // true indicates that the frame should be rendered
                     mDecoder.releaseOutputBuffer(outIndex, true);
-                    break;
+                }
             }
 
-            // All decoded frames have been rendered, we can stop playing now
             if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0)
             {
                 Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
@@ -145,6 +181,7 @@ public class VideoDecoder extends Thread
 
         mDecoder.stop();
         mDecoder.release();
+        mDecoder = null;
     }
 
     public void close()
