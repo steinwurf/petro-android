@@ -8,175 +8,205 @@ package com.steinwurf.petro;
 import java.nio.ByteBuffer;
 
 import android.media.MediaCodec;
-import android.media.MediaCodec.BufferInfo;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.util.Log;
 import android.view.Surface;
 
-public class VideoExtractorDecoder extends Thread
+import java.io.IOException;
+
+public class VideoExtractorDecoder
 {
-    private static final String VIDEO = "video/";
     private static final String TAG = "VideoExtractorDecoder";
+
+    private static final String VIDEO = "video/";
     private static final int TIMEOUT_US = 10000;
 
-    private MediaExtractor mExtractor;
-    private MediaCodec mDecoder;
+    private final MediaExtractor extractor;
+    private final MediaFormat format;
+    private boolean mRunning = false;
+    private Surface mSurface = null;
+    private Thread mThread = null;
+    private long mLastSleepTime = 0;
     private long mLastSampleTime = 0;
-    private boolean mEosReceived = false;
-    private MediaFormat mFormat;
-    private int mVideoWidth;
-    private int mVideoHeight;
+    private long mFrameDrops = 0;
 
-    public VideoExtractorDecoder(String filePath)
+
+    public static VideoExtractorDecoder build(String filePath)
     {
+        MediaExtractor extractor = new MediaExtractor();
         try
         {
-            mExtractor = new MediaExtractor();
-            mExtractor.setDataSource(filePath);
-
-            for (int i = 0; i < mExtractor.getTrackCount(); i++)
-            {
-                MediaFormat format = mExtractor.getTrackFormat(i);
-
-                String mime = format.getString(MediaFormat.KEY_MIME);
-                if (mime.startsWith(VIDEO))
-                {
-                    mExtractor.selectTrack(i);
-                    mDecoder = MediaCodec.createDecoderByType(mime);
-
-                    mVideoWidth = format.getInteger(MediaFormat.KEY_WIDTH);
-                    mVideoHeight = format.getInteger(MediaFormat.KEY_HEIGHT);
-                    mFormat = format;
-                    Log.d(TAG, "Media format : " + format);
-
-                    break;
-                }
-            }
+            extractor.setDataSource(filePath);
         }
         catch (Exception e)
         {
             e.printStackTrace();
+            return null;
         }
+
+        VideoExtractorDecoder videoExtractorDecoder = null;
+        for (int i = 0; i < extractor.getTrackCount(); i++)
+        {
+            MediaFormat format = extractor.getTrackFormat(i);
+
+            String mime = format.getString(MediaFormat.KEY_MIME);
+            if (mime.startsWith(VIDEO))
+            {
+                extractor.selectTrack(i);
+                videoExtractorDecoder = new VideoExtractorDecoder(extractor, format);
+                break;
+            }
+        }
+        return videoExtractorDecoder;
     }
 
-    public boolean init(Surface surface)
+    private VideoExtractorDecoder(MediaExtractor extractor, MediaFormat format)
     {
-        try
-        {
-            mDecoder.configure(mFormat, surface, null, 0 /* Decoder */);
-        }
-        catch (IllegalStateException e)
-        {
-            Log.e(TAG, "MediaCodec configuration failed." + e);
-            return false;
-        }
-
-        return true;
+        this.extractor = extractor;
+        this.format = format;
     }
 
     public int getVideoHeight()
     {
-        return mVideoHeight;
+        return format.getInteger(MediaFormat.KEY_HEIGHT);
     }
 
     public int getVideoWidth()
     {
-        return mVideoWidth;
+        return format.getInteger(MediaFormat.KEY_WIDTH);
     }
 
-    @Override
-    public void run()
+    public long lastSleepTime()
     {
-        mEosReceived = false;
-        mDecoder.start();
+        return mLastSleepTime;
+    }
 
-        ByteBuffer[] inputBuffers = mDecoder.getInputBuffers();
-        mDecoder.getOutputBuffers();
-        BufferInfo info = new BufferInfo();
+    public long lastSampleTime()
+    {
+        return mLastSampleTime;
+    }
 
-        long startWhen = System.currentTimeMillis();
-        while (!mEosReceived)
+    public long frameDrops()
+    {
+        return mFrameDrops;
+    }
+
+    public void setSurface(Surface surface)
+    {
+        mSurface = surface;
+    }
+
+    public void start()
+    {
+        if (mSurface == null)
+            throw new AssertionError();
+
+        mThread = new Thread(new Runnable()
         {
-            int inputIndex = mDecoder.dequeueInputBuffer(TIMEOUT_US);
-            if (inputIndex >= 0)
+            @Override
+            public void run()
             {
-                // fill inputBuffers[inputBufferIndex] with valid data
-                ByteBuffer inputBuffer = inputBuffers[inputIndex];
-
-                int sampleSize = mExtractor.readSampleData(inputBuffer, 0);
-
-                if (sampleSize > 0)
+                mRunning = true;
+                MediaCodec decoder;
+                try
                 {
-                    long sampleTime = mExtractor.getSampleTime();
-                    mDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
-
-                    mExtractor.advance();
+                    decoder =
+                            MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME));
                 }
-                else
+                catch (IOException e)
                 {
-                    Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
-                    mDecoder.queueInputBuffer(inputIndex, 0, 0, 0,
-                        MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                    mEosReceived = true;
+                    e.printStackTrace();
+                    return;
                 }
-            }
+                decoder.configure(format, mSurface, null, 0);
+                decoder.start();
+                ByteBuffer[] inputBuffers = decoder.getInputBuffers();
+                MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
 
-            int outIndex = mDecoder.dequeueOutputBuffer(info, TIMEOUT_US);
-            switch (outIndex)
-            {
-                case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                    Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
-                    mDecoder.getOutputBuffers();
-                    break;
+                long startTime = System.currentTimeMillis();
+                while (mRunning) {
 
-                case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                    MediaFormat format = mDecoder.getOutputFormat();
-                    Log.d(TAG, "INFO_OUTPUT_FORMAT_CHANGED format : " + format);
-                    break;
+                    int inputIndex = decoder.dequeueInputBuffer(TIMEOUT_US);
+                    if (inputIndex >= 0) {
+                        // fill inputBuffers[inputBufferIndex] with valid data
+                        ByteBuffer inputBuffer = inputBuffers[inputIndex];
+                        int sampleSize = extractor.readSampleData(inputBuffer, 0);
 
-                case MediaCodec.INFO_TRY_AGAIN_LATER:
-                    Log.d(TAG, "INFO_TRY_AGAIN_LATER");
-                    break;
+                        if (sampleSize > 0) {
+                            long sampleTime = extractor.getSampleTime();
+                            decoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
 
-                default:
-
-                    try
-                    {
-                        long sleepTime = (info.presentationTimeUs / 1000) -
-                            (System.currentTimeMillis() - startWhen);
-                        Log.d(TAG,
-                            "info.presentationTimeUs : " + (info.presentationTimeUs / 1000) + " " +
-                            "playTime: " + (System.currentTimeMillis() - startWhen) + " " +
-                            "sleepTime : " + sleepTime);
-
-                        if (sleepTime > 0)
-                            Thread.sleep(sleepTime);
-                    }
-                    catch (InterruptedException e)
-                    {
-                        e.printStackTrace();
+                            extractor.advance();
+                        } else {
+                            Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
+                            decoder.queueInputBuffer(inputIndex, 0, 0, 0,
+                                    MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                            mRunning = false;
+                        }
                     }
 
-                    mDecoder.releaseOutputBuffer(outIndex, true);
-                    break;
-            }
+                    int outIndex = decoder.dequeueOutputBuffer(info, TIMEOUT_US);
+                    if (outIndex >= 0) {
+                        long sampleTime = info.presentationTimeUs / 1000;
+                        long playTime = System.currentTimeMillis() - startTime;
+                        long sleepTime = sampleTime - playTime;
 
-            // All decoded frames have been rendered, we can stop playing now
-            if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0)
-            {
-                Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
-                break;
-            }
-        }
+                        mLastSleepTime = sleepTime;
+                        mLastSampleTime = sampleTime;
 
-        mDecoder.stop();
-        mDecoder.release();
-        mExtractor.release();
+                        if (sleepTime > 0) {
+                            try {
+                                Thread.sleep(sleepTime);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        // Drop the buffer if it is late by more than 50 ms
+                        if (sleepTime < -50) {
+                            decoder.releaseOutputBuffer(outIndex, false);
+                            mFrameDrops++;
+                            Log.d(TAG, "Dropped Frame " + sleepTime);
+                        } else {
+                            // true indicates that the frame should be rendered
+                            decoder.releaseOutputBuffer(outIndex, true);
+                        }
+
+                        if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                            break;
+                        }
+                    }
+
+                    // All decoded frames have been rendered, we can stop playing now
+                    if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                        Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
+                        mRunning = false;
+                    }
+                }
+
+                decoder.stop();
+                decoder.release();
+                extractor.release();
+            }
+        });
+        mThread.start();
     }
 
-    public void close()
+    public void stop()
     {
-        mEosReceived = true;
+        mRunning = false;
+        if (mThread != null)
+        {
+            try
+            {
+                mThread.join();
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+            mThread = null;
+        }
     }
 }

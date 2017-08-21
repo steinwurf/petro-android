@@ -7,6 +7,7 @@ import android.view.Surface;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class VideoDecoder
 {
@@ -14,9 +15,24 @@ public class VideoDecoder
 
     private static final int TIMEOUT_US = 10000;
     private static final String MIME = "video/avc";
+    public static final byte[] NALU_HEADER = new byte[]{0x00, 0x00, 0x00, 0x01};
+
+    private static boolean hasNALUHeader(byte[] buffer)
+    {
+        return Arrays.equals(Arrays.copyOfRange(buffer, 0, 4), NALU_HEADER);
+    }
 
     public static VideoDecoder build(int width, int height, byte[] sps, byte[] pps)
     {
+        if (!hasNALUHeader(sps)) {
+            Log.e(TAG, "No header before SPS");
+            return null;
+        }
+        if (!hasNALUHeader(pps)) {
+            Log.e(TAG, "No header before PPS");
+            return null;
+        }
+
         MediaFormat format = MediaFormat.createVideoFormat(MIME, width, height);
 
         if (format == null)
@@ -101,6 +117,7 @@ public class VideoDecoder
                 ByteBuffer[] inputBuffers = decoder.getInputBuffers();
                 MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
 
+                long startTime = System.currentTimeMillis();
                 while (mRunning)
                 {
                     // Try to add new samples if our samples list contains some data
@@ -116,11 +133,13 @@ public class VideoDecoder
                             {
                                 // Pop the next sample from samples
                                 SampleStorage.Sample sample = mSampleStorage.getNextSample();
-
+                                if (!hasNALUHeader(sample.data))
+                                {
+                                    throw new Exception("Got sample without NALU header");
+                                }
                                 buffer.put(sample.data);
-                                int sampleSize = sample.data.length;
                                 decoder.queueInputBuffer(
-                                        inIndex, 0, sampleSize, sample.timestamp, 0);
+                                        inIndex, 0, sample.data.length, sample.timestamp, 0);
                             }
                             catch (Exception e)
                             {
@@ -134,8 +153,8 @@ public class VideoDecoder
 
                     if (outIndex >= 0)
                     {
-                        long playTime = mSampleStorage.getPlayTime();
                         long sampleTime = info.presentationTimeUs / 1000;
+                        long playTime = System.currentTimeMillis() - startTime;
                         long sleepTime =  sampleTime - playTime;
 
                         mLastSleepTime = sleepTime;

@@ -1,11 +1,11 @@
 package com.steinwurf.mediaextractor;
 
 @SuppressWarnings("JniMissingFunction")
-public class NALUSampleExtractor extends Extractor {
+public class NALUExtractor extends Extractor {
 
     static
     {
-        System.loadLibrary("avc_sample_extractor_jni");
+        System.loadLibrary("nalu_extractor_jni");
     }
 
     /**
@@ -15,9 +15,9 @@ public class NALUSampleExtractor extends Extractor {
     private static native long init();
 
     /**
-     * Constructs an NALUSampleExtractor
+     * Constructs an NALUExtractor
      */
-    public NALUSampleExtractor()
+    public NALUExtractor()
     {
         super(init());
     }
@@ -29,16 +29,16 @@ public class NALUSampleExtractor extends Extractor {
     public native boolean isBeginningOfAVCSample();
 
     /**
-     * Returns the pps data
+     * Returns the pps data without NALU header
      * @return pps data
      */
-    public native byte[] getPPSData();
+    public native byte[] getPPS();
 
     /**
-     * Returns the sps data
+     * Returns the pps data without NALU header
      * @return sps data
      */
-    public native byte[] getSPSData();
+    public native byte[] getSPS();
 
     /**
      * Finalizes the object and it's underlying native part.

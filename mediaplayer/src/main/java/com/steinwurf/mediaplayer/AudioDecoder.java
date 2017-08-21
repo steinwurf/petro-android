@@ -120,6 +120,7 @@ public class AudioDecoder
 
                 BufferInfo info = new BufferInfo();
 
+                long startTime = System.currentTimeMillis();
                 while (mRunning)
                 {
                     // Try to add new samples if our samples list contains some data
@@ -166,8 +167,7 @@ public class AudioDecoder
                             break;
 
                         default:
-
-                            long playTime = mSampleStorage.getPlayTime();
+                            long playTime = System.currentTimeMillis() - startTime;
                             long sleepTime = (info.presentationTimeUs / 1000) - playTime;
 
                             mLastSleepTime = sleepTime;

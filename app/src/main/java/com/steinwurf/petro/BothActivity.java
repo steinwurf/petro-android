@@ -5,249 +5,220 @@
 
 package com.steinwurf.petro;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Point;
+import android.graphics.SurfaceTexture;
 import android.graphics.Typeface;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.TextureView;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+import com.steinwurf.mediaextractor.AACSampleExtractor;
+import com.steinwurf.mediaextractor.Extractor;
+import com.steinwurf.mediaextractor.NALUExtractor;
+import com.steinwurf.mediaextractor.SequenceParameterSet;
+import com.steinwurf.mediaplayer.*;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 
-public class BothActivity /*extends FullscreenActivity
-    implements NativeInterface.NativeInterfaceListener, SurfaceHolder.Callback*/
-
+public class BothActivity extends Activity implements TextureView.SurfaceTextureListener
 {
-    /*
     private static final String TAG = "BothActivity";
 
-    private VideoDecoder mVideoDecoder;
-    private AudioDecoder mAudioDecoder;
 
-    private DebugOverlay mDebugOverlay = null;
+    private AudioDecoder mAudioDecoder;
+    private SampleStorage mAudioSampleStorage;
+    private AACSampleExtractor mAACSampleExtractor;
+    Thread mAudioExtractorThread;
+
+    private VideoDecoder mVideoDecoder;
+    private SampleStorage mVideoSampleStorage;
+    private NALUExtractor mNALUExtractor;
+    private Thread mVideoExtractorThread;
+    private Surface mSurface;
+
+    private boolean mRunning = false;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.video_activity);
 
         Intent intent = getIntent();
         String filePath = intent.getStringExtra(MainActivity.FILEPATH);
 
-        NativeInterface.setNativeInterfaceListener(this);
-        NativeInterface.nativeInitialize(filePath);
-        mVideoDecoder = new VideoDecoder();
-        mAudioDecoder = new AudioDecoder();
+        mNALUExtractor = new NALUExtractor();
+        mNALUExtractor.setFilePath(filePath);
 
-        SurfaceView surfaceView = (SurfaceView) findViewById(R.id.surfaceView);
-        fillAspectRatio(surfaceView, NativeInterface.getVideoWidth(),
-            NativeInterface.getVideoHeight());
-        surfaceView.getHolder().addCallback(this);
+        mAACSampleExtractor = new AACSampleExtractor();
+        mAACSampleExtractor.setFilePath(filePath);
 
-        setupDebugOverlay();
-    }
+        try {
+            mNALUExtractor.open();
+            mAACSampleExtractor.open();
+        } catch (Extractor.UnableToOpenException e) {
+            e.printStackTrace();
+            finish();
+            return;
+        }
 
-    @Override
-    public void onInitialized()
-    {
-        Log.d(TAG, "initialized");
-    }
+        mRunning = true;
 
-    @Override
-    public void surfaceCreated(SurfaceHolder holder)
-    {
-
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
-    {
-        if (mVideoDecoder != null && mAudioDecoder != null)
-        {
-            if (mVideoDecoder.init(
-                    holder.getSurface(),
-                    NativeInterface.getSPS(),
-                    NativeInterface.getPPS()) &&
-                mAudioDecoder.init(
-                    NativeInterface.getAudioCodecProfileLevel(),
-                    NativeInterface.getAudioSampleRate(),
-                    NativeInterface.getAudioChannelCount()))
-            {
-                // A 500 ms warm-up time prevents frame drops at the start of playback
-                long startTime = System.currentTimeMillis() + 500;
-                mVideoDecoder.setStartTime(startTime);
-                mAudioDecoder.setStartTime(startTime);
-                mVideoDecoder.start();
-                mAudioDecoder.start();
+        mAudioSampleStorage = new SampleStorage(0);
+        mAudioExtractorThread = new Thread(){
+            public void run(){
+                while (mRunning && !mAACSampleExtractor.atEnd())
+                {
+                    mAudioSampleStorage.addSample(
+                            mAACSampleExtractor.getDecodingTimestamp(),
+                            mAACSampleExtractor.getSample());
+                    mAACSampleExtractor.advance();
+                }
             }
-            else
-            {
-                mVideoDecoder = null;
-                mAudioDecoder = null;
+        };
+        mAudioExtractorThread.start();
+
+        mVideoSampleStorage = new SampleStorage(0);
+        mVideoExtractorThread = new Thread(){
+            public void run(){
+                ByteArrayOutputStream sample = new ByteArrayOutputStream();
+                while (mRunning && !mNALUExtractor.atEnd())
+                {
+                    long timestamp = mNALUExtractor.getPresentationTimestamp();
+                    try {
+                        sample.write(VideoDecoder.NALU_HEADER);
+                        sample.write(mNALUExtractor.getSample());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        sample.reset();
+                        continue;
+                    }
+                    mNALUExtractor.advance();
+                    if (mNALUExtractor.isBeginningOfAVCSample())
+                    {
+                        mVideoSampleStorage.addSample(timestamp, sample.toByteArray());
+                        sample.reset();
+                    }
+                }
+            }
+        };
+        mVideoExtractorThread.start();
+
+        mAudioDecoder = AudioDecoder.build(
+                mAACSampleExtractor.getMPEGAudioObjectType(),
+                mAACSampleExtractor.getFrequencyIndex(),
+                mAACSampleExtractor.getChannelConfiguration());
+        mAudioDecoder.setSampleStorage(mAudioSampleStorage);
+
+        ByteArrayOutputStream spsBuffer = new ByteArrayOutputStream();
+        ByteArrayOutputStream ppsBuffer = new ByteArrayOutputStream();
+
+        byte[] sps = mNALUExtractor.getSPS();
+        byte[] pps = mNALUExtractor.getPPS();
+
+        SequenceParameterSet sequenceParameterSet = SequenceParameterSet.parse(sps);
+        if (sequenceParameterSet == null)
+        {
+            finish();
+            return;
+        }
+
+        try {
+            spsBuffer.write(VideoDecoder.NALU_HEADER);
+            spsBuffer.write(sps);
+            ppsBuffer.write(VideoDecoder.NALU_HEADER);
+            ppsBuffer.write(pps);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        mVideoDecoder = VideoDecoder.build(
+                sequenceParameterSet.getVideoWidth(),
+                sequenceParameterSet.getVideoHeight(),
+                spsBuffer.toByteArray(),
+                ppsBuffer.toByteArray());
+
+        if (mVideoDecoder == null)
+        {
+            finish();
+            return;
+        }
+
+        mVideoDecoder.setSampleStorage(mVideoSampleStorage);
+
+        TextureView textureView = findViewById(R.id.textureView);
+
+        Point displayMetrics  = com.steinwurf.mediaplayer.Utils.getRealMetrics(this);
+        textureView.setTransform(
+                com.steinwurf.mediaplayer.Utils.fitScaleMatrix(
+                        sequenceParameterSet.getVideoWidth(),
+                        sequenceParameterSet.getVideoHeight(),
+                        displayMetrics.x,
+                        displayMetrics.y));
+        textureView.setSurfaceTextureListener(this);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mAudioExtractorThread != null && mVideoExtractorThread != null)
+        {
+            mRunning = false;
+            try {
+                mAudioExtractorThread.join();
+                mVideoExtractorThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
+
+        if (mAACSampleExtractor != null)
+            mAACSampleExtractor.close();
+        if (mNALUExtractor != null)
+            mNALUExtractor.close();
     }
 
     @Override
-    public void surfaceDestroyed(SurfaceHolder holder)
-    {
-        if (mVideoDecoder != null)
-        {
-            mVideoDecoder.close();
-        }
-        if (mAudioDecoder != null)
-        {
-            mAudioDecoder.close();
-        }
+    public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+        mAudioDecoder.start();
+
+        mSurface = new Surface(surface);
+        mVideoDecoder.setSurface(mSurface);
+        mVideoDecoder.start();
     }
 
     @Override
-    protected void onStop()
-    {
-        super.onStop();
-        NativeInterface.nativeFinalize();
+    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int width, int height) {
+
     }
 
-    private void setupDebugOverlay()
-    {
-        FrameLayout Frame = (FrameLayout) findViewById(R.id.frame);
-        final TextView textView = new TextView(this);
-        textView.setTextColor(Color.WHITE);
-        textView.setTextSize(15);
-        textView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        textView.setBackgroundColor(0x88000000);
-        textView.setPadding(10, 10, 10, 10);
-        Frame.addView(
-            textView,
-            new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.START));
-        mDebugOverlay = new DebugOverlay();
-
-        mDebugOverlay.setDebugInfoHandler(
-            new DebugOverlay.DebugInfoHandler()
-            {
-                @Override
-                public void handle(final String debugInfo)
-                {
-                    runOnUiThread(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            textView.setText(debugInfo);
-                        }
-                    });
-                }
-            }
-        );
-
-        mDebugOverlay.addDebugOverlayLineConstructor(
-            new DebugOverlay.DebugOverlayLineConstructor()
-            {
-                @Override
-                public String constructLine()
-                {
-                    if (mVideoDecoder != null)
-                    {
-                        return "PlayTime   : " + mVideoDecoder.lastPlayTime() + " ms";
-                    }
-
-                    return "";
-                }
-            }
-        );
-
-        mDebugOverlay.addDebugOverlayLineConstructor(
-            new DebugOverlay.DebugOverlayLineConstructor()
-            {
-                @Override
-                public String constructLine()
-                {
-                    long audio = 0;
-                    long video = 0;
-
-                    if (mAudioDecoder != null)
-                    {
-                        audio = mAudioDecoder.lastSampleTime();
-                    }
-
-                    if (mVideoDecoder != null)
-                    {
-                        video = mVideoDecoder.lastSampleTime();
-                    }
-
-                    return "AudioOffset: " + (audio - video) + " ms";
-                }
-            }
-        );
-
-        mDebugOverlay.addDebugOverlayLineConstructor(
-            new DebugOverlay.DebugOverlayLineConstructor()
-            {
-                @Override
-                public String constructLine()
-                {
-                    long audio = 0;
-                    long video = 0;
-
-                    if (mAudioDecoder != null)
-                    {
-                        audio = mAudioDecoder.frameDrops();
-                    }
-
-                    if (mVideoDecoder != null)
-                    {
-                        video = mVideoDecoder.frameDrops();
-                    }
-
-                    return "FrameDrops : " + String.format("%d/%d A/V", audio, video);
-                }
-            }
-        );
-
-        mDebugOverlay.addDebugOverlayLineConstructor(
-            new DebugOverlay.DebugOverlayLineConstructor()
-            {
-                @Override
-                public String constructLine()
-                {
-                    if (mAudioDecoder != null)
-                    {
-                        return "AudioSleep : " + mAudioDecoder.lastSleepTime() + " ms";
-                    }
-
-                    return "";
-                }
-            }
-        );
-
-        mDebugOverlay.addDebugOverlayLineConstructor(
-            new DebugOverlay.DebugOverlayLineConstructor()
-            {
-                @Override
-                public String constructLine()
-                {
-                    if (mVideoDecoder != null)
-                    {
-                        return "VideoSleep : " + mVideoDecoder.lastSleepTime() + " ms";
-                    }
-                    return "";
-                }
-            }
-        );
-
-
-        mDebugOverlay.start();
+    @Override
+    public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+        mAudioDecoder.stop();
+        mVideoDecoder.stop();
+        if (mSurface != null)
+        {
+            mSurface.release();
+            mSurface = null;
+        }
+        return true;
     }
-    */
+
+    @Override
+    public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+
+    }
 }

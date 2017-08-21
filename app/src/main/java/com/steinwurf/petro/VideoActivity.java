@@ -5,29 +5,33 @@
 
 package com.steinwurf.petro;
 
+import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
 
-import com.steinwurf.mediaextractor.NALUSampleExtractor;
+import com.steinwurf.mediaextractor.NALUExtractor;
 import com.steinwurf.mediaextractor.Extractor;
-import com.steinwurf.mediaplayer.SampleStorage;
+import com.steinwurf.mediaextractor.SequenceParameterSet;
 import com.steinwurf.mediaplayer.VideoDecoder;
+import com.steinwurf.mediaplayer.SampleStorage;
+import com.steinwurf.mediaplayer.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 
-public class VideoActivity extends FullscreenActivity implements TextureView.SurfaceTextureListener
+public class VideoActivity extends Activity implements TextureView.SurfaceTextureListener
 {
     private static final String TAG = "VideoActivity";
 
     private VideoDecoder mVideoDecoder;
 
-    private NALUSampleExtractor mNALUSampleExtractor;
+    private NALUExtractor mNALUExtractor;
     private SampleStorage mSampleStorage;
     private Thread mExtractorThread;
     private boolean mRunning = false;
@@ -36,65 +40,41 @@ public class VideoActivity extends FullscreenActivity implements TextureView.Sur
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate");
         setContentView(R.layout.video_activity);
-
-        TextureView textureView = findViewById(R.id.textureView);
-        textureView.setSurfaceTextureListener(this);
 
         Intent intent = getIntent();
         String filePath = intent.getStringExtra(MainActivity.FILEPATH);
 
-        mNALUSampleExtractor = new NALUSampleExtractor();
-        mNALUSampleExtractor.setFilePath(filePath);
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
+        mNALUExtractor = new NALUExtractor();
+        mNALUExtractor.setFilePath(filePath);
 
         try {
-            mNALUSampleExtractor.open();
+            mNALUExtractor.open();
         } catch (Extractor.UnableToOpenException e) {
             e.printStackTrace();
             finish();
             return;
         }
 
-        int width = 1280;
-        int height = 720;
-        mVideoDecoder = VideoDecoder.build(
-                width, height, mNALUSampleExtractor.getSPSData(), mNALUSampleExtractor.getPPSData());
-        if (mVideoDecoder == null)
-        {
-            finish();
-            return;
-        }
-
-        if (mSurface != null)
-        {
-            mVideoDecoder.setSurface(mSurface);
-            mVideoDecoder.start();
-        }
-
         mSampleStorage = new SampleStorage(0);
-        mVideoDecoder.setSampleStorage(mSampleStorage);
-
         mRunning = true;
         mExtractorThread = new Thread(){
             public void run(){
-                //byte[] header = {0x00, 0x00, 0x00, 0x01};
                 ByteArrayOutputStream sample = new ByteArrayOutputStream();
-                while (mRunning && !mNALUSampleExtractor.atEnd())
+                while (mRunning && !mNALUExtractor.atEnd())
                 {
+                    long timestamp = mNALUExtractor.getPresentationTimestamp();
                     try {
-                        //sample.write(header);
-                        sample.write(mNALUSampleExtractor.getSample());
+                        sample.write(VideoDecoder.NALU_HEADER);
+                        sample.write(mNALUExtractor.getSample());
                     } catch (IOException e) {
                         e.printStackTrace();
+                        sample.reset();
+                        continue;
                     }
-                    long timestamp = mNALUSampleExtractor.getPresentationTimestamp();
-                    mNALUSampleExtractor.advance();
-                    //if (mNALUSampleExtractor.isBeginningOfAVCSample())
+                    mNALUExtractor.advance();
+                    if (mNALUExtractor.isBeginningOfAVCSample())
                     {
                         mSampleStorage.addSample(timestamp, sample.toByteArray());
                         sample.reset();
@@ -102,32 +82,81 @@ public class VideoActivity extends FullscreenActivity implements TextureView.Sur
                 }
             }
         };
-
         mExtractorThread.start();
-    }
 
-    @Override
-    protected void onStop() {
+        ByteArrayOutputStream spsBuffer = new ByteArrayOutputStream();
+        ByteArrayOutputStream ppsBuffer = new ByteArrayOutputStream();
+
+        byte[] sps = mNALUExtractor.getSPS();
+        byte[] pps = mNALUExtractor.getPPS();
+
+        SequenceParameterSet sequenceParameterSet = SequenceParameterSet.parse(sps);
+        if (sequenceParameterSet == null)
+        {
+            finish();
+            return;
+        }
+
         try {
-            mRunning = false;
-            mExtractorThread.join();
-        } catch (InterruptedException e) {
+            spsBuffer.write(VideoDecoder.NALU_HEADER);
+            spsBuffer.write(sps);
+            ppsBuffer.write(VideoDecoder.NALU_HEADER);
+            ppsBuffer.write(pps);
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
-        mNALUSampleExtractor.close();
-        super.onStop();
+        mVideoDecoder = VideoDecoder.build(
+                sequenceParameterSet.getVideoWidth(),
+                sequenceParameterSet.getVideoHeight(),
+                spsBuffer.toByteArray(),
+                ppsBuffer.toByteArray());
+
+        if (mVideoDecoder == null)
+        {
+            finish();
+            return;
+        }
+
+        mVideoDecoder.setSampleStorage(mSampleStorage);
+
+        TextureView textureView = findViewById(R.id.textureView);
+
+        Point displayMetrics  = Utils.getRealMetrics(this);
+        textureView.setTransform(
+                Utils.fitScaleMatrix(
+                        sequenceParameterSet.getVideoWidth(),
+                        sequenceParameterSet.getVideoHeight(),
+                        displayMetrics.x,
+                        displayMetrics.y));
+        textureView.setSurfaceTextureListener(this);
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy");
+        if (mExtractorThread != null)
+        {
+            try {
+                mRunning = false;
+                mExtractorThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (mNALUExtractor != null)
+            mNALUExtractor.close();
     }
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
 
         mSurface = new Surface(surface);
-        if (mVideoDecoder != null)
-        {
-            mVideoDecoder.setSurface(mSurface);
-            mVideoDecoder.start();
-        }
+        mVideoDecoder.setSurface(mSurface);
+        mVideoDecoder.start();
     }
 
     @Override
@@ -137,6 +166,7 @@ public class VideoActivity extends FullscreenActivity implements TextureView.Sur
 
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+        mVideoDecoder.stop();
         if (mSurface != null)
         {
             mSurface.release();

@@ -36,11 +36,6 @@ public class AudioActivity extends AppCompatActivity
 
         mAACSampleExtractor = new AACSampleExtractor();
         mAACSampleExtractor.setFilePath(filePath);
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
         try {
             mAACSampleExtractor.open();
         } catch (Extractor.UnableToOpenException e) {
@@ -48,17 +43,23 @@ public class AudioActivity extends AppCompatActivity
             finish();
             return;
         }
-
         mAudioDecoder = AudioDecoder.build(
                 mAACSampleExtractor.getMPEGAudioObjectType(),
                 mAACSampleExtractor.getFrequencyIndex(),
                 mAACSampleExtractor.getChannelConfiguration());
+        if (mAudioDecoder == null)
+        {
+            finish();
+            return;
+        }
+    }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mRunning = true;
         mSampleStorage = new SampleStorage(0);
         mAudioDecoder.setSampleStorage(mSampleStorage);
-
-
-        mRunning = true;
         mExtractorThread = new Thread(){
             public void run(){
                 while (mRunning && !mAACSampleExtractor.atEnd())
@@ -76,16 +77,25 @@ public class AudioActivity extends AppCompatActivity
     }
 
     @Override
-    protected void onStop() {
-        try {
-            mRunning = false;
-            mExtractorThread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+    protected void onStop()
+    {
+        if (mExtractorThread != null) {
+            try {
+                mRunning = false;
+                mExtractorThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
-        mAACSampleExtractor.close();
         mAudioDecoder.stop();
         super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        mAACSampleExtractor.close();
     }
 }

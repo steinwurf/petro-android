@@ -103,7 +103,7 @@ void Java_com_steinwurf_mediaextractor_AACSampleExtractor_open(
     if (error)
     {
         auto exception_class = jutils::get_class(
-            env, "com/steinwurf/mediaextractor/AACSampleExtractor$UnableToOpenException");
+            env, "com/steinwurf/mediaextractor/Extractor$UnableToOpenException");
         env->ThrowNew(exception_class, error.message().c_str());
     }
 }

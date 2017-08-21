@@ -1,15 +1,6 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
-bld(features='cxx cxxshlib copy_binary',
-    source=bld.path.ant_glob('petro.cpp'),
-    target='petro_android',
-    export_includes=['jni'],
-    install_path=None,
-    copy_path='../app/src/main/jniLibs/armeabi',
-    lib=['android'],
-    use=['petro'])
-
 # =========== JUTILS =========== #
 
 bld.stlib(
@@ -47,8 +38,16 @@ bld(features='cxx cxxshlib copy_binary',
     use=['jutils', 'petro'])
 
 bld(features='cxx cxxshlib copy_binary',
-    source=['avc_sample_extractor_jni.cpp'],
-    target='avc_sample_extractor_jni',
+    source=['nalu_extractor_jni.cpp'],
+    target='nalu_extractor_jni',
+    install_path=None,
+    copy_path='../mediaextractor/src/main/jniLibs/' + copy_path_platform,
+    lib=['android'],
+    use=['jutils', 'petro'])
+
+bld(features='cxx cxxshlib copy_binary',
+    source=['sequence_parameter_set_jni.cpp'],
+    target='sequence_parameter_set_jni',
     install_path=None,
     copy_path='../mediaextractor/src/main/jniLibs/' + copy_path_platform,
     lib=['android'],
