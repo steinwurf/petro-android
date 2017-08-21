@@ -5,9 +5,9 @@
     android:id="@+id/frame"
     android:background="@android:color/black"
     android:gravity="center">
-    <SurfaceView
+    <TextureView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/surfaceView"
+        android:id="@+id/textureView"
         android:layout_gravity="center"/>
 </FrameLayout>

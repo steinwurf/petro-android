@@ -21,9 +21,11 @@ import android.widget.TextView;
 
 import java.io.File;
 
-public class BothActivity extends FullscreenActivity
-    implements NativeInterface.NativeInterfaceListener, SurfaceHolder.Callback
+public class BothActivity /*extends FullscreenActivity
+    implements NativeInterface.NativeInterfaceListener, SurfaceHolder.Callback*/
+
 {
+    /*
     private static final String TAG = "BothActivity";
 
     private VideoDecoder mVideoDecoder;
@@ -247,4 +249,5 @@ public class BothActivity extends FullscreenActivity
 
         mDebugOverlay.start();
     }
+    */
 }

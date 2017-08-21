@@ -19,8 +19,9 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
-public class VideoExtractorActivity extends FullscreenActivity implements SurfaceHolder.Callback
+public class VideoExtractorActivity /*extends FullscreenActivity implements SurfaceHolder.Callback*/
 {
+    /*
     private static final String TAG = "VideoExtractorActivity";
     private VideoExtractorDecoder mVideoDecoder;
 
@@ -71,4 +72,5 @@ public class VideoExtractorActivity extends FullscreenActivity implements Surfac
             mVideoDecoder.close();
         }
     }
+    */
 }

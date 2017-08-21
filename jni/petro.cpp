@@ -55,15 +55,20 @@ void Java_com_steinwurf_petro_NativeInterface_nativeInitialize(
     video->set_file_path(mp4);
     audio->set_file_path(mp4);
 
-    if (!video->open())
+    std::error_code video_error;
+    video->open(video_error);
+    if (video_error)
     {
         video.reset();
-        LOGI << "Unable to open video!";
+        LOGI << "Unable to open video: " << video_error.message();
     }
-    if (!audio->open())
+
+    std::error_code audio_error;
+    audio->open(audio_error);
+    if (audio_error)
     {
         audio.reset();
-        LOGI << "Unable to open audio!";
+        LOGI << "Unable to open audio: " << audio_error.message();
     }
 
     env->CallStaticVoidMethod(

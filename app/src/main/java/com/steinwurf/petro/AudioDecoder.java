@@ -24,7 +24,7 @@ public class AudioDecoder extends Thread
     private static final String MIME = "audio/mp4a-latm";
 
     private MediaCodec mDecoder;
-    AudioTrack mAudioTrack;
+    private AudioTrack mAudioTrack;
 
     private boolean mEosReceived;
     private long mStartTime = System.currentTimeMillis();

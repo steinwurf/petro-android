@@ -7,6 +7,7 @@ package com.steinwurf.petro;
 
 import android.util.Log;
 
+@SuppressWarnings("JniMissingFunction")
 public class NativeInterface {
 
     private static final String TAG = "NativeInterface";
@@ -55,4 +56,5 @@ public class NativeInterface {
     public static native int getAudioSampleRate();
     public static native int getAudioChannelCount();
     public static native int getAudioCodecProfileLevel();
+
 }
