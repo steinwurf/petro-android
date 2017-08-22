@@ -15,6 +15,10 @@ public class VideoDecoder
 
     private static final int TIMEOUT_US = 10000;
     private static final String MIME = "video/avc";
+
+    /**
+     * A buffer contatining a NALU header
+     */
     public static final byte[] NALU_HEADER = new byte[]{0x00, 0x00, 0x00, 0x01};
 
     private static boolean hasNALUHeader(byte[] buffer)
@@ -22,6 +26,14 @@ public class VideoDecoder
         return Arrays.equals(Arrays.copyOfRange(buffer, 0, 4), NALU_HEADER);
     }
 
+    /**
+     * Returns a {@link VideoDecoder} or null upon failure.
+     * @param width The width of the video in pixels
+     * @param height The height of the video in pixels
+     * @param sps The SPS buffer with a NALU header present.
+     * @param pps The PPS buffer with a NALU header present.
+     * @return {@link VideoDecoder} or null upon failure.
+     */
     public static VideoDecoder build(int width, int height, byte[] sps, byte[] pps)
     {
         if (!hasNALUHeader(sps)) {
@@ -61,34 +73,76 @@ public class VideoDecoder
     private long mLastSampleTime = 0;
     private long mFrameDrops = 0;
 
+    private long mDropBufferLimit = 50;
+
     private VideoDecoder(MediaFormat format)
     {
         this.format = format;
     }
 
+    /**
+     * Returns the last sleep time.
+     * @return the last sleep time.
+     */
     public long lastSleepTime()
     {
         return mLastSleepTime;
     }
 
+    /**
+     * Returns the last sample time.
+     * @return the last sample time.
+     */
     public long lastSampleTime()
     {
         return mLastSampleTime;
     }
 
+    /**
+     * Returns the number of times a frame has been dropped due to being too late
+     * @return the number of times a frame has been dropped due to being too late
+     */
     public long frameDrops()
     {
         return mFrameDrops;
     }
 
+    /**
+     * The limit determining whether a buffer arrived too late.
+     * @return limit determining whether a buffer arrived too late.
+     */
+    public long dropBufferLimit()
+    {
+        return mDropBufferLimit;
+    }
+
+    /**
+     * Sets the surface to decode the video onto. This needs to be set before
+     * calling {@link VideoDecoder#start()}.
+     * @param surface The surface to decode the video onto.
+     */
     public void setSurface(Surface surface)
     {
         mSurface = surface;
     }
 
+    /**
+     * Sets the sample storage. This is where the data buffers are stored.
+     * @param sampleStorage The sample storage where the data buffers are stored
+     */
     public void setSampleStorage(SampleStorage sampleStorage)
     {
         mSampleStorage = sampleStorage;
+    }
+
+    /**
+     * Change the limit determining whether a buffer arrived too late. If set to 0 no buffers will
+     * be dropped.
+     * @param dropBufferLimit The new limit.
+     */
+    public void setDropBufferLimit(long dropBufferLimit)
+    {
+        mDropBufferLimit = dropBufferLimit;
     }
 
     public void start()
@@ -133,10 +187,6 @@ public class VideoDecoder
                             {
                                 // Pop the next sample from samples
                                 SampleStorage.Sample sample = mSampleStorage.getNextSample();
-                                if (!hasNALUHeader(sample.data))
-                                {
-                                    throw new Exception("Got sample without NALU header");
-                                }
                                 buffer.put(sample.data);
                                 decoder.queueInputBuffer(
                                         inIndex, 0, sample.data.length, sample.timestamp, 0);
@@ -172,8 +222,8 @@ public class VideoDecoder
                             }
                         }
 
-                        // Drop the buffer if it is late by more than 50 ms
-                        if (sleepTime < -50)
+                        // Determine of the buffer should be dropped due to being too late
+                        if (mDropBufferLimit != 0 && sleepTime < -mDropBufferLimit)
                         {
                             decoder.releaseOutputBuffer(outIndex, false);
                             mFrameDrops++;

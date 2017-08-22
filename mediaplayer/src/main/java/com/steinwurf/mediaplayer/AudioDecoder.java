@@ -3,6 +3,7 @@ package com.steinwurf.mediaplayer;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -103,6 +104,7 @@ public class AudioDecoder
                 decoder.configure(format, null, null, 0);
 
                 int sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
+
                 AudioTrack audioTrack = new AudioTrack(
                         AudioManager.STREAM_MUSIC,
                         sampleRate,

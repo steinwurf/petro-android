@@ -11,27 +11,22 @@ import java.lang.reflect.Method;
 
 public class Utils {
 
-    public static Matrix fitScaleMatrix(int videoWidth, int videoHeight,
-                                        int viewWidth, int viewHeight)
-    {
-        float scale = Math.min(
-                (float)viewHeight / videoHeight,
-                (float)viewWidth / videoWidth);
-
-        float scaledWidth = videoWidth * scale;
-        float scaledHeight = videoHeight * scale;
-
-        final Matrix matrix = new Matrix();
-        matrix.setScale(
-                scaledWidth / viewWidth,
-                scaledHeight / viewHeight,
-                viewWidth / 2f,
-                viewHeight / 2f);
-        return matrix;
-    }
-
+    /**
+     * Returns the default display Metrics as a {@link Point}.
+     * @param activity The activity.
+     * @return the default display Metrics as a {@link Point}.
+     */
     public static Point getRealMetrics(Activity activity) {
         Display display = activity.getWindowManager().getDefaultDisplay();
+        return getRealMetrics(display);
+    }
+
+    /**
+     * Returns the Metrics of the given display as a {@link Point}.
+     * @param display The display.
+     * @return the Metrics of the given display as a {@link Point}.
+     */
+    public static Point getRealMetrics(Display display ) {
         if (Build.VERSION.SDK_INT >= 17) {
             //new pleasant way to get real metrics
             DisplayMetrics realMetrics = new DisplayMetrics();
@@ -53,5 +48,86 @@ public class Utils {
             }
 
         }
+    }
+
+    private static int gcd(int a, int b)
+    {
+        if (b == 0)
+            return a;
+        return gcd(b, a % b);
+    }
+
+    /**
+     * Returns a {@link String} representing the aspect ratio.
+     * @param width With of item
+     * @param height Height of item
+     * @return {@link String} representing the aspect ratio.
+     */
+    public static String aspectRatio(int width, int height)
+    {
+        int r = gcd(width, height);
+        return width / r + ":" + height / r;
+    }
+
+    /**
+     * Returns a {@link Matrix} to be used
+     * with {@link android.view.TextureView#setTransform(Matrix)}.
+     * This will expand the video to fill the view, potentially losing some content, depending on
+     * the aspect ratio of the view and video.
+     * @param videoWidth The width of the video
+     * @param videoHeight The height of the video
+     * @param viewWidth The width of the view
+     * @param viewHeight The height of the view
+     * @return {@link Matrix} to be used
+     * with {@link android.view.TextureView#setTransform(Matrix)}.
+     */
+    public static Matrix fillScaleMatrix(int videoWidth, int videoHeight,
+                                         int viewWidth, int viewHeight)
+    {
+        float scale = Math.max(
+                (float)viewHeight / videoHeight,
+                (float)viewWidth / videoWidth);
+
+        float scaledWidth = videoWidth * scale;
+        float scaledHeight = videoHeight * scale;
+
+        final Matrix matrix = new Matrix();
+        matrix.setScale(
+                scaledWidth / viewWidth,
+                scaledHeight / viewHeight,
+                viewWidth / 2f,
+                viewHeight / 2f);
+        return matrix;
+    }
+
+    /**
+     * Returns a {@link Matrix} to be used
+     * with {@link android.view.TextureView#setTransform(Matrix)}.
+     * This will expand the video to fit the view, potentially adding black bars, depending on
+     * the aspect ratio of the view and video.
+     * @param videoWidth The width of the video
+     * @param videoHeight The height of the video
+     * @param viewWidth The width of the view
+     * @param viewHeight The height of the view
+     * @return {@link Matrix} to be used
+     * with {@link android.view.TextureView#setTransform(Matrix)}.
+     */
+    public static Matrix fitScaleMatrix(int videoWidth, int videoHeight,
+                                        int viewWidth, int viewHeight)
+    {
+        float scale = Math.min(
+                (float)viewHeight / videoHeight,
+                (float)viewWidth / videoWidth);
+
+        float scaledWidth = videoWidth * scale;
+        float scaledHeight = videoHeight * scale;
+
+        final Matrix matrix = new Matrix();
+        matrix.setScale(
+                scaledWidth / viewWidth,
+                scaledHeight / viewHeight,
+                viewWidth / 2f,
+                viewHeight / 2f);
+        return matrix;
     }
 }
