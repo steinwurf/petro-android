@@ -5,76 +5,98 @@
 
 package com.steinwurf.petro;
 
-import android.Manifest;
-import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.media.MediaCodec;
-import android.os.Environment;
-import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
+import android.support.v7.app.AppCompatActivity;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import com.steinwurf.mediaextractor.AACSampleExtractor;
+import com.steinwurf.mediaextractor.Extractor;
+import com.steinwurf.mediaplayer.AudioDecoder;
+import com.steinwurf.mediaplayer.SampleStorage;
 
 public class AudioActivity extends AppCompatActivity
-    implements NativeInterface.NativeInterfaceListener
 {
     private static final String TAG = "AudioActivity";
 
     private AudioDecoder mAudioDecoder;
+    private SampleStorage mSampleStorage;
+
+    private AACSampleExtractor mAACSampleExtractor;
+
+    Thread mExtractorThread;
+    boolean mRunning = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.audio_activity);
 
         Intent intent = getIntent();
         String filePath = intent.getStringExtra(MainActivity.FILEPATH);
 
-        NativeInterface.setNativeInterfaceListener(this);
-        mAudioDecoder = new AudioDecoder();
-        NativeInterface.nativeInitialize(filePath);
-    }
-
-    @Override
-    public void onInitialized()
-    {
-        Log.d(TAG, "initialized");
-        if (mAudioDecoder != null)
+        mAACSampleExtractor = new AACSampleExtractor();
+        mAACSampleExtractor.setFilePath(filePath);
+        try {
+            mAACSampleExtractor.open();
+        } catch (Extractor.UnableToOpenException e) {
+            e.printStackTrace();
+            finish();
+            return;
+        }
+        mSampleStorage = new SampleStorage(0);
+        mAudioDecoder = AudioDecoder.build(
+                mAACSampleExtractor.getMPEGAudioObjectType(),
+                mAACSampleExtractor.getFrequencyIndex(),
+                mAACSampleExtractor.getChannelConfiguration(),
+                mSampleStorage);
+        if (mAudioDecoder == null)
         {
-            if (mAudioDecoder.init(
-                NativeInterface.getAudioCodecProfileLevel(),
-                NativeInterface.getAudioSampleRate(),
-                NativeInterface.getAudioChannelCount()))
-            {
-                long startTime = System.currentTimeMillis();
-                mAudioDecoder.setStartTime(startTime);
-                mAudioDecoder.start();
-            }
-            else
-            {
-                mAudioDecoder = null;
-            }
+            finish();
+            return;
         }
     }
 
     @Override
-    public void onStop()
+    protected void onStart() {
+        super.onStart();
+        mRunning = true;
+        mExtractorThread = new Thread(){
+            public void run(){
+                while (mRunning && !mAACSampleExtractor.atEnd())
+                {
+                    mSampleStorage.addSample(
+                            mAACSampleExtractor.getDecodingTimestamp(),
+                            mAACSampleExtractor.getSample());
+                    mAACSampleExtractor.advance();
+                }
+            }
+        };
+
+        mExtractorThread.start();
+        mAudioDecoder.start();
+    }
+
+    @Override
+    protected void onStop()
     {
+        if (mExtractorThread != null) {
+            try {
+                mRunning = false;
+                mExtractorThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        mAudioDecoder.stop();
         super.onStop();
-        if (mAudioDecoder != null)
-        {
-            mAudioDecoder.close();
-        }
-        NativeInterface.nativeFinalize();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        mAACSampleExtractor.close();
     }
 }

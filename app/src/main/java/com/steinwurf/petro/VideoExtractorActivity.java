@@ -9,20 +9,28 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Point;
+import android.graphics.SurfaceTexture;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.TextureView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
-public class VideoExtractorActivity extends FullscreenActivity implements SurfaceHolder.Callback
+import com.steinwurf.mediaplayer.*;
+
+public class VideoExtractorActivity extends Activity implements TextureView.SurfaceTextureListener
 {
+
     private static final String TAG = "VideoExtractorActivity";
     private VideoExtractorDecoder mVideoDecoder;
+
+    private Surface mSurface;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -33,42 +41,48 @@ public class VideoExtractorActivity extends FullscreenActivity implements Surfac
         Intent intent = getIntent();
         String filePath = intent.getStringExtra(MainActivity.FILEPATH);
 
-        mVideoDecoder = new VideoExtractorDecoder(filePath);
+        mVideoDecoder = VideoExtractorDecoder.build(filePath);
 
-        SurfaceView surfaceView = (SurfaceView) findViewById(R.id.surfaceView);
-        fillAspectRatio(surfaceView, mVideoDecoder.getVideoWidth(),
-                        mVideoDecoder.getVideoHeight());
-        surfaceView.getHolder().addCallback(this);
+        TextureView textureView = findViewById(R.id.textureView);
+
+        Point displayMetrics  = com.steinwurf.mediaplayer.Utils.getRealMetrics(this);
+        textureView.setTransform(
+                com.steinwurf.mediaplayer.Utils.fitScaleMatrix(
+                        mVideoDecoder.getVideoWidth(),
+                        mVideoDecoder.getVideoHeight(),
+                        displayMetrics.x,
+                        displayMetrics.y));
+        textureView.setSurfaceTextureListener(this);
+    }
+
+
+    @Override
+    public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+
+        mSurface = new Surface(surface);
+        mVideoDecoder.setSurface(mSurface);
+        mVideoDecoder.start();
     }
 
     @Override
-    public void surfaceCreated(SurfaceHolder holder)
-    {
-    }
+    public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+        mVideoDecoder.stop();
 
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
-    {
-        Log.d(TAG, "surfaceChanged");
-        if (mVideoDecoder != null)
+        if (mSurface != null)
         {
-            if (mVideoDecoder.init(holder.getSurface()))
-            {
-                mVideoDecoder.start();
-            }
-            else
-            {
-                mVideoDecoder = null;
-            }
+            mSurface.release();
+            mSurface = null;
         }
+        return true;
     }
 
     @Override
-    public void surfaceDestroyed(SurfaceHolder holder)
-    {
-        if (mVideoDecoder != null)
-        {
-            mVideoDecoder.close();
-        }
+    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int width, int height) {
+
+    }
+
+    @Override
+    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
+
     }
 }

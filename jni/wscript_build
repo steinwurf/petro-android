@@ -1,11 +1,54 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
-bld(features='cxx cxxshlib copy_binary',
-    source=bld.path.ant_glob('*.cpp'),
-    target='petro_android',
-    export_includes=['jni'],
-    install_path=None,
-    copy_path='../app/src/main/jniLibs/armeabi',
+# =========== JUTILS =========== #
+
+bld.stlib(
+    features='cxx',
+    source=bld.path.ant_glob('jutils/**/*.cpp'),
+    target='jutils',
     lib=['android'],
-    use=['petro'])
+    use=[],
+    export_includes=['.'])
+
+# ============================== #
+
+cpu = bld.env['DEST_CPU']
+cpu_copy_path_map = {
+    'x86': 'x86',
+    'x86_64': 'x86_64',
+    'arm': 'armeabi',
+    'arm64': 'arm64-v8a',
+    # Unsupported
+    # 'armeabi-v7a': 'armeabi-v7a',
+    # 'mips': 'mips',
+    # 'mips64': 'mips64',
+}
+if cpu not in cpu_copy_path_map:
+    bld.fatal("Unsupported Destination CPU: {}".format(cpu))
+
+copy_path_platform = cpu_copy_path_map[cpu]
+
+bld(features='cxx cxxshlib copy_binary',
+    source=['aac_sample_extractor_jni.cpp'],
+    target='aac_sample_extractor_jni',
+    install_path=None,
+    copy_path='../mediaextractor/src/main/jniLibs/' + copy_path_platform,
+    lib=['android'],
+    use=['jutils', 'petro'])
+
+bld(features='cxx cxxshlib copy_binary',
+    source=['nalu_extractor_jni.cpp'],
+    target='nalu_extractor_jni',
+    install_path=None,
+    copy_path='../mediaextractor/src/main/jniLibs/' + copy_path_platform,
+    lib=['android'],
+    use=['jutils', 'petro'])
+
+bld(features='cxx cxxshlib copy_binary',
+    source=['sequence_parameter_set_jni.cpp'],
+    target='sequence_parameter_set_jni',
+    install_path=None,
+    copy_path='../mediaextractor/src/main/jniLibs/' + copy_path_platform,
+    lib=['android'],
+    use=['jutils', 'petro'])
