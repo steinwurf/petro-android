@@ -26,14 +26,3 @@ dependencies {
     compile project(path: ':mediaextractor')
     compile project(path: ':mediaplayer')
 }
-
-task invokeWaf {
-    doLast {
-        exec {
-            workingDir getRootProject().projectDir
-            executable 'python'
-            args 'waf', 'build'
-        }
-    }
-}
-preBuild.dependsOn invokeWaf
