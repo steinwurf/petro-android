@@ -1,5 +1,12 @@
 apply plugin: 'com.android.library'
 
+project.ext {
+    libraryVersionCode = 1
+    libraryGroupId = 'com.steinwurf.mediaplayer'
+    libraryVersion = '1.0.0'
+    repositoryKey = 'libs-release-local'
+}
+
 android {
     compileSdkVersion 26
     buildToolsVersion "26.0.0"
@@ -7,8 +14,8 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 26
-        versionCode 1
-        versionName "1.0"
+        versionCode project.libraryVersionCode
+        versionName project.libraryVersion
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -26,6 +33,18 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:appcompat-v7:26.+'
     testCompile 'junit:junit:4.12'
 }
+
+task invokeWaf {
+    doLast {
+        exec {
+            workingDir getRootProject().projectDir
+            executable 'python'
+            args 'waf', 'build'
+        }
+    }
+}
+preBuild.dependsOn invokeWaf
+
+apply from: '../deploy.gradle'

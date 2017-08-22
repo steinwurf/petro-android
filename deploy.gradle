@@ -1,0 +1,66 @@
+apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'maven-publish'
+
+def resolved_artifactory_username = ""
+def resolved_artifactory_password = ""
+if (hasProperty('artifactory_username') && hasProperty('artifactory_password')) {
+    resolved_artifactory_username = artifactory_username
+    resolved_artifactory_password = artifactory_password
+}
+else
+{
+    logger.error('Unable to find Artifactory credentials. Publishing will not be possible.')
+}
+
+publishing {
+    publications {
+        aar(MavenPublication) {
+            groupId project.libraryGroupId
+            version project.libraryVersion
+            artifactId project.getName()
+            artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
+
+            pom.withXml {
+                def dependencies = asNode().appendNode('dependencies')
+                configurations.getByName("_releaseCompile").getResolvedConfiguration().getFirstLevelModuleDependencies().each {
+
+                    // Skip android support libraries.
+                    if (it.moduleGroup == 'com.android.support')
+                        return;
+
+                    def dependency = dependencies.appendNode('dependency')
+                    // For local dependencies (compile project(...)) the version number will be
+                    // "unspecified". To get the correct version number we load the project and
+                    // read the version.
+                    def itmoduleVersion = it.moduleVersion
+                    def itmoduleGroup = it.moduleGroup
+                    if (itmoduleVersion == "unspecified")
+                    {
+                        def project = project(":$it.moduleName")
+                        itmoduleVersion = project.libraryVersion
+                        itmoduleGroup = project.libraryGroupId
+                    }
+                    dependency.appendNode('version', itmoduleVersion)
+                    dependency.appendNode('groupId', itmoduleGroup)
+                    dependency.appendNode('artifactId', it.moduleName)
+                }
+            }
+        }
+    }
+}
+
+artifactory {
+    contextUrl = 'http://artifactory.steinwurf.com/artifactory'
+    publish {
+        repository {
+            repoKey = project.repositoryKey
+            username = resolved_artifactory_username
+            password = resolved_artifactory_password
+        }
+        defaults {
+            publications('aar')
+            publishArtifacts = true
+            publishPom = true
+        }
+    }
+}
