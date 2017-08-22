@@ -17,9 +17,8 @@ import android.view.TextureView;
 import com.steinwurf.mediaextractor.NALUExtractor;
 import com.steinwurf.mediaextractor.Extractor;
 import com.steinwurf.mediaextractor.SequenceParameterSet;
-import com.steinwurf.mediaplayer.VideoDecoder;
-import com.steinwurf.mediaplayer.SampleStorage;
 import com.steinwurf.mediaplayer.Utils;
+import com.steinwurf.mediaplayer.VideoDecoder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,7 +31,7 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
     private VideoDecoder mVideoDecoder;
 
     private NALUExtractor mNALUExtractor;
-    private SampleStorage mSampleStorage;
+    private VideoDecoder.H264SampleStorage mSampleStorage;
     private Thread mExtractorThread;
     private boolean mRunning = false;
     private Surface mSurface;
@@ -57,7 +56,7 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
             return;
         }
 
-        mSampleStorage = new SampleStorage(0);
+        mSampleStorage = new VideoDecoder.H264SampleStorage(0);
         mRunning = true;
         mExtractorThread = new Thread(){
             public void run(){
@@ -110,15 +109,14 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
                 sequenceParameterSet.getVideoWidth(),
                 sequenceParameterSet.getVideoHeight(),
                 spsBuffer.toByteArray(),
-                ppsBuffer.toByteArray());
+                ppsBuffer.toByteArray(),
+                mSampleStorage);
 
         if (mVideoDecoder == null)
         {
             finish();
             return;
         }
-
-        mVideoDecoder.setSampleStorage(mSampleStorage);
 
         TextureView textureView = findViewById(R.id.textureView);
 

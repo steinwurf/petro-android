@@ -1,22 +1,17 @@
 package com.steinwurf.mediaplayer;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
-import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.media.MediaCodec;
-import android.media.MediaCodec.BufferInfo;
 import android.media.MediaFormat;
 import android.util.Log;
 
-public class AudioDecoder
-{
-    private static final String TAG = "AudioDecoder";
+import java.nio.ByteBuffer;
 
-    private static final int TIMEOUT_US = 10000;
+public class AudioDecoder extends Decoder {
+
+    private static final String TAG = "AudioDecoder";
     private static final String MIME = "audio/mp4a-latm";
 
     private static final int[] SAMPLE_RATES = new int[]
@@ -25,7 +20,16 @@ public class AudioDecoder
                     16000, 12000, 11025, 8000
             };
 
-    public static AudioDecoder build(int audioProfile, int sampleRateIndex, int channelCount)
+    /**
+     * Returns a constructed AudioDecoder or null upon failure.
+     * @param audioProfile The audio profile
+     * @param sampleRateIndex The sample rate Index
+     * @param channelCount The number of channels
+     * @param sampleStorage The sample storage
+     * @return a constructed AudioDecoder or null upon failure.
+     */
+    public static AudioDecoder build(
+            int audioProfile, int sampleRateIndex, int channelCount, SampleStorage sampleStorage)
     {
         int sampleRate = SAMPLE_RATES[sampleRateIndex];
 
@@ -44,199 +48,70 @@ public class AudioDecoder
         csd.flip();
         format.setByteBuffer("csd-0", csd); // add csd-0
 
-        return new AudioDecoder(format);
+        return new AudioDecoder(format, sampleStorage);
     }
 
-    private final MediaFormat format;
+    private ByteBuffer[] mOutputBuffers = null;
+    private AudioTrack mAudioTrack = null;
 
-    private SampleStorage mSampleStorage = null;
-    private Thread mThread = null;
-    private boolean mRunning = false;
+    private AudioDecoder(MediaFormat format, SampleStorage sampleStorage) {
+        super(format, MIME, sampleStorage);
 
-    private long mLastSleepTime = 0;
-    private long mLastSampleTime = 0;
-    private long mFrameDrops = 0;
+        int sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
 
-    private AudioDecoder(MediaFormat format)
-    {
-        this.format = format;
+        mAudioTrack = new AudioTrack(
+                AudioManager.STREAM_MUSIC,
+                sampleRate,
+                AudioFormat.CHANNEL_OUT_STEREO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                AudioTrack.getMinBufferSize(
+                        sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT),
+                AudioTrack.MODE_STREAM);
     }
 
-    public void setSampleStorage(SampleStorage sampleStorage)
-    {
-        mSampleStorage = sampleStorage;
+    @Override
+    public void start() {
+        mAudioTrack.play();
+        super.start();
     }
 
-    long lastSleepTime()
-    {
-        return mLastSleepTime;
+    @Override
+    public void stop() {
+        super.stop();
     }
 
-    long lastSampleTime()
-    {
-        return mLastSampleTime;
+    @Override
+    protected void outputBuffersChanged(MediaCodec decoder) {
+        super.outputBuffersChanged(decoder);
+        Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
+        mOutputBuffers = decoder.getOutputBuffers();
     }
 
-    long frameDrops()
-    {
-        return mFrameDrops;
+    @Override
+    protected void outputFormatChanged(MediaCodec decoder) {
+        super.outputFormatChanged(decoder);
+        MediaFormat format = decoder.getOutputFormat();
+        Log.d(TAG, "INFO_OUTPUT_FORMAT_CHANGED format : " + format);
+        mAudioTrack.setPlaybackRate(format.getInteger(MediaFormat.KEY_SAMPLE_RATE));
     }
 
-    public void start()
-    {
-        mThread = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                mRunning = true;
-                MediaCodec decoder;
-                try
-                {
-                    decoder = MediaCodec.createDecoderByType(MIME);
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                    return;
-                }
+    @Override
+    protected void render(MediaCodec decoder, int outIndex) {
+        if (mOutputBuffers == null)
+            mOutputBuffers = decoder.getOutputBuffers();
 
-                decoder.configure(format, null, null, 0);
+        ByteBuffer outputBuffer = mOutputBuffers[outIndex];
 
-                int sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
-
-                AudioTrack audioTrack = new AudioTrack(
-                        AudioManager.STREAM_MUSIC,
-                        sampleRate,
-                        AudioFormat.CHANNEL_OUT_STEREO,
-                        AudioFormat.ENCODING_PCM_16BIT,
-                        AudioTrack.getMinBufferSize(
-                                sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT),
-                        AudioTrack.MODE_STREAM);
-
-                audioTrack.play();
-
-                decoder.start();
-                ByteBuffer[] inputBuffers = decoder.getInputBuffers();
-                ByteBuffer[] outputBuffers = decoder.getOutputBuffers();
-
-                BufferInfo info = new BufferInfo();
-
-                long startTime = System.currentTimeMillis();
-                while (mRunning)
-                {
-                    // Try to add new samples if our samples list contains some data
-                    if (mSampleStorage != null && mSampleStorage.getCount() > 0)
-                    {
-                        int inIndex = decoder.dequeueInputBuffer(TIMEOUT_US);
-                        if (inIndex >= 0)
-                        {
-                            // fill inputBuffers[inputBufferIndex] with valid data
-                            ByteBuffer buffer = inputBuffers[inIndex];
-                            buffer.clear();
-
-                            try
-                            {
-                                // Pop the first sample from samples
-                                SampleStorage.Sample sample = mSampleStorage.getNextSample();
-                                buffer.put(sample.data);
-                                int sampleSize = sample.data.length;
-                                decoder.queueInputBuffer(inIndex, 0, sampleSize, sample.timestamp, 0);
-                            }
-                            catch (Exception e)
-                            {
-                                Log.e(TAG, "Failed to push buffer to decoder");
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-
-                    int outIndex = decoder.dequeueOutputBuffer(info, TIMEOUT_US);
-                    switch (outIndex)
-                    {
-                        case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                            Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
-                            outputBuffers = decoder.getOutputBuffers();
-                            break;
-
-                        case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                            MediaFormat format = decoder.getOutputFormat();
-                            Log.d(TAG, "INFO_OUTPUT_FORMAT_CHANGED format : " + format);
-                            audioTrack.setPlaybackRate(format.getInteger(MediaFormat.KEY_SAMPLE_RATE));
-                            break;
-
-                        case MediaCodec.INFO_TRY_AGAIN_LATER:
-                            break;
-
-                        default:
-                            long playTime = System.currentTimeMillis() - startTime;
-                            long sleepTime = (info.presentationTimeUs / 1000) - playTime;
-
-                            mLastSleepTime = sleepTime;
-                            mLastSampleTime = info.presentationTimeUs / 1000;
-
-                            if (sleepTime > 0)
-                            {
-                                try
-                                {
-                                    Thread.sleep(sleepTime);
-                                }
-                                catch (InterruptedException e)
-                                {
-                                    e.printStackTrace();
-                                }
-                            }
-
-                            // Drop the buffer if it is late by more than 50 ms
-                            if (sleepTime < -50)
-                            {
-                                Log.d(TAG, "Dropped Frame " + sleepTime);
-                                mFrameDrops++;
-                            }
-                            else
-                            {
-                                ByteBuffer outBuffer = outputBuffers[outIndex];
-                                final byte[] chunk = new byte[info.size];
-                                outBuffer.get(chunk);
-                                outBuffer.clear();
-                                audioTrack.write(chunk, info.offset, info.offset + info.size);
-                            }
-                            decoder.releaseOutputBuffer(outIndex, false);
-                            break;
-                    }
-
-                    // All decoded frames have been rendered, we can stop playing now
-                    if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0)
-                    {
-                        Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
-                        break;
-                    }
-                }
-
-                decoder.stop();
-                decoder.release();
-
-                audioTrack.stop();
-                audioTrack.release();
-            }
-        });
-        mThread.start();
+        final byte[] chunk = new byte[outputBuffer.limit()];
+        outputBuffer.get(chunk);
+        outputBuffer.clear();
+        mAudioTrack.write(chunk, 0, chunk.length);
+        decoder.releaseOutputBuffer(outIndex, false);
     }
 
-    public void stop()
-    {
-        mRunning = false;
-        if (mThread != null)
-        {
-            try
-            {
-                mThread.join();
-            }
-            catch (InterruptedException e)
-            {
-                e.printStackTrace();
-            }
-            mThread = null;
-        }
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        mAudioTrack.release();
     }
 }

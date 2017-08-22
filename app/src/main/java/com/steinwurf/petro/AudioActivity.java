@@ -30,6 +30,7 @@ public class AudioActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.audio_activity);
 
         Intent intent = getIntent();
         String filePath = intent.getStringExtra(MainActivity.FILEPATH);
@@ -43,10 +44,12 @@ public class AudioActivity extends AppCompatActivity
             finish();
             return;
         }
+        mSampleStorage = new SampleStorage(0);
         mAudioDecoder = AudioDecoder.build(
                 mAACSampleExtractor.getMPEGAudioObjectType(),
                 mAACSampleExtractor.getFrequencyIndex(),
-                mAACSampleExtractor.getChannelConfiguration());
+                mAACSampleExtractor.getChannelConfiguration(),
+                mSampleStorage);
         if (mAudioDecoder == null)
         {
             finish();
@@ -58,8 +61,6 @@ public class AudioActivity extends AppCompatActivity
     protected void onStart() {
         super.onStart();
         mRunning = true;
-        mSampleStorage = new SampleStorage(0);
-        mAudioDecoder.setSampleStorage(mSampleStorage);
         mExtractorThread = new Thread(){
             public void run(){
                 while (mRunning && !mAACSampleExtractor.atEnd())

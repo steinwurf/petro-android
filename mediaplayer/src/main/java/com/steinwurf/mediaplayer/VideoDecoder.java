@@ -5,19 +5,34 @@ import android.media.MediaFormat;
 import android.util.Log;
 import android.view.Surface;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-public class VideoDecoder
-{
-    private static final String TAG = "VideoDecoder";
-
-    private static final int TIMEOUT_US = 10000;
-    private static final String MIME = "video/avc";
+public class VideoDecoder extends Decoder {
 
     /**
-     * A buffer contatining a NALU header
+     * A {@link SampleStorage} extension which checks the added samples for H264 headers.
+     */
+    public static class H264SampleStorage extends SampleStorage
+    {
+        public H264SampleStorage(long offset) {
+            super(offset);
+        }
+
+        @Override
+        public void addSample(long timestamp, byte[] data) {
+            if (!hasNALUHeader(data)) {
+                Log.e(TAG, "No NALU header before sample");
+                return;
+            }
+            super.addSample(timestamp, data);
+        }
+    }
+
+    private static final String TAG = "VideoDecoder";
+    private static final String MIME = "video/avc";
+    /**
+     * A buffer containing a NALU header
      */
     public static final byte[] NALU_HEADER = new byte[]{0x00, 0x00, 0x00, 0x01};
 
@@ -34,7 +49,8 @@ public class VideoDecoder
      * @param pps The PPS buffer with a NALU header present.
      * @return {@link VideoDecoder} or null upon failure.
      */
-    public static VideoDecoder build(int width, int height, byte[] sps, byte[] pps)
+    public static VideoDecoder build(
+            int width, int height, byte[] sps, byte[] pps, H264SampleStorage sampleStorage)
     {
         if (!hasNALUHeader(sps)) {
             Log.e(TAG, "No header before SPS");
@@ -58,62 +74,11 @@ public class VideoDecoder
         format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
         format.setInteger(MediaFormat.KEY_DURATION, Integer.MAX_VALUE);
 
-        return new VideoDecoder(format);
+        return new VideoDecoder(format, sampleStorage);
     }
 
-    private final MediaFormat format;
-
-    private SampleStorage mSampleStorage = null;
-    private Surface mSurface = null;
-
-    private Thread mThread = null;
-    private boolean mRunning = false;
-
-    private long mLastSleepTime = 0;
-    private long mLastSampleTime = 0;
-    private long mFrameDrops = 0;
-
-    private long mDropBufferLimit = 50;
-
-    private VideoDecoder(MediaFormat format)
-    {
-        this.format = format;
-    }
-
-    /**
-     * Returns the last sleep time.
-     * @return the last sleep time.
-     */
-    public long lastSleepTime()
-    {
-        return mLastSleepTime;
-    }
-
-    /**
-     * Returns the last sample time.
-     * @return the last sample time.
-     */
-    public long lastSampleTime()
-    {
-        return mLastSampleTime;
-    }
-
-    /**
-     * Returns the number of times a frame has been dropped due to being too late
-     * @return the number of times a frame has been dropped due to being too late
-     */
-    public long frameDrops()
-    {
-        return mFrameDrops;
-    }
-
-    /**
-     * The limit determining whether a buffer arrived too late.
-     * @return limit determining whether a buffer arrived too late.
-     */
-    public long dropBufferLimit()
-    {
-        return mDropBufferLimit;
+    private VideoDecoder(MediaFormat format, H264SampleStorage sampleStorage) {
+        super(format, MIME, sampleStorage);
     }
 
     /**
@@ -126,143 +91,15 @@ public class VideoDecoder
         mSurface = surface;
     }
 
-    /**
-     * Sets the sample storage. This is where the data buffers are stored.
-     * @param sampleStorage The sample storage where the data buffers are stored
-     */
-    public void setSampleStorage(SampleStorage sampleStorage)
-    {
-        mSampleStorage = sampleStorage;
-    }
-
-    /**
-     * Change the limit determining whether a buffer arrived too late. If set to 0 no buffers will
-     * be dropped.
-     * @param dropBufferLimit The new limit.
-     */
-    public void setDropBufferLimit(long dropBufferLimit)
-    {
-        mDropBufferLimit = dropBufferLimit;
-    }
-
-    public void start()
-    {
+    @Override
+    public void start() {
         if (mSurface == null)
             throw new AssertionError();
-
-        mThread = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                mRunning = true;
-                MediaCodec decoder;
-                try
-                {
-                    decoder = MediaCodec.createDecoderByType(MIME);
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                    return;
-                }
-                decoder.configure(format, mSurface, null, 0);
-                decoder.start();
-                ByteBuffer[] inputBuffers = decoder.getInputBuffers();
-                MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-
-                long startTime = System.currentTimeMillis();
-                while (mRunning)
-                {
-                    // Try to add new samples if our samples list contains some data
-                    if (mSampleStorage != null && mSampleStorage.getCount() > 0)
-                    {
-                        int inIndex = decoder.dequeueInputBuffer(TIMEOUT_US);
-                        if (inIndex >= 0)
-                        {
-                            ByteBuffer buffer = inputBuffers[inIndex];
-                            buffer.clear();
-
-                            try
-                            {
-                                // Pop the next sample from samples
-                                SampleStorage.Sample sample = mSampleStorage.getNextSample();
-                                buffer.put(sample.data);
-                                decoder.queueInputBuffer(
-                                        inIndex, 0, sample.data.length, sample.timestamp, 0);
-                            }
-                            catch (Exception e)
-                            {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-
-                    // Check if output is available
-                    int outIndex = decoder.dequeueOutputBuffer(info, TIMEOUT_US);
-
-                    if (outIndex >= 0)
-                    {
-                        long sampleTime = info.presentationTimeUs / 1000;
-                        long playTime = System.currentTimeMillis() - startTime;
-                        long sleepTime =  sampleTime - playTime;
-
-                        mLastSleepTime = sleepTime;
-                        mLastSampleTime = sampleTime;
-
-                        if (sleepTime > 0)
-                        {
-                            try
-                            {
-                                Thread.sleep(sleepTime);
-                            }
-                            catch (InterruptedException e)
-                            {
-                                e.printStackTrace();
-                            }
-                        }
-
-                        // Determine of the buffer should be dropped due to being too late
-                        if (mDropBufferLimit != 0 && sleepTime < -mDropBufferLimit)
-                        {
-                            decoder.releaseOutputBuffer(outIndex, false);
-                            mFrameDrops++;
-                            Log.d(TAG, "Dropped Frame " + sleepTime);
-                        }
-                        else
-                        {
-                            // true indicates that the frame should be rendered
-                            decoder.releaseOutputBuffer(outIndex, true);
-                        }
-
-                        if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0)
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                decoder.stop();
-                decoder.release();
-            }
-        });
-        mThread.start();
+        super.start();
     }
 
-    public void stop()
-    {
-        mRunning = false;
-        if (mThread != null)
-        {
-            try
-            {
-                mThread.join();
-            }
-            catch (InterruptedException e)
-            {
-                e.printStackTrace();
-            }
-            mThread = null;
-        }
+    @Override
+    protected void render(MediaCodec decoder, int outIndex) {
+        decoder.releaseOutputBuffer(outIndex, true);
     }
 }

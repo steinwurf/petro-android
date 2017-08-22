@@ -35,6 +35,7 @@ public class AudioExtractorActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.audio_activity);
 
         Intent intent = getIntent();
         String filePath = intent.getStringExtra(MainActivity.FILEPATH);

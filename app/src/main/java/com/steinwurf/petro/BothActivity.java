@@ -7,22 +7,11 @@ package com.steinwurf.petro;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
-import android.graphics.Typeface;
-import android.os.Environment;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.Gravity;
 import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.TextureView;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.TextView;
 
 import com.steinwurf.mediaextractor.AACSampleExtractor;
 import com.steinwurf.mediaextractor.Extractor;
@@ -31,7 +20,6 @@ import com.steinwurf.mediaextractor.SequenceParameterSet;
 import com.steinwurf.mediaplayer.*;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 
 public class BothActivity extends Activity implements TextureView.SurfaceTextureListener
@@ -45,7 +33,7 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
     Thread mAudioExtractorThread;
 
     private VideoDecoder mVideoDecoder;
-    private SampleStorage mVideoSampleStorage;
+    private VideoDecoder.H264SampleStorage mVideoSampleStorage;
     private NALUExtractor mNALUExtractor;
     private Thread mVideoExtractorThread;
     private Surface mSurface;
@@ -91,7 +79,7 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
         };
         mAudioExtractorThread.start();
 
-        mVideoSampleStorage = new SampleStorage(0);
+        mVideoSampleStorage = new VideoDecoder.H264SampleStorage(0);
         mVideoExtractorThread = new Thread(){
             public void run(){
                 ByteArrayOutputStream sample = new ByteArrayOutputStream();
@@ -120,8 +108,8 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
         mAudioDecoder = AudioDecoder.build(
                 mAACSampleExtractor.getMPEGAudioObjectType(),
                 mAACSampleExtractor.getFrequencyIndex(),
-                mAACSampleExtractor.getChannelConfiguration());
-        mAudioDecoder.setSampleStorage(mAudioSampleStorage);
+                mAACSampleExtractor.getChannelConfiguration(),
+                mAudioSampleStorage);
 
         ByteArrayOutputStream spsBuffer = new ByteArrayOutputStream();
         ByteArrayOutputStream ppsBuffer = new ByteArrayOutputStream();
@@ -149,15 +137,14 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
                 sequenceParameterSet.getVideoWidth(),
                 sequenceParameterSet.getVideoHeight(),
                 spsBuffer.toByteArray(),
-                ppsBuffer.toByteArray());
+                ppsBuffer.toByteArray(),
+                mVideoSampleStorage);
 
         if (mVideoDecoder == null)
         {
             finish();
             return;
         }
-
-        mVideoDecoder.setSampleStorage(mVideoSampleStorage);
 
         TextureView textureView = findViewById(R.id.textureView);
 
