@@ -1,6 +1,11 @@
 apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'maven-publish'
 
+// Use this command to deploy everything in this project:
+//     ./gradlew assembleRelease artifactoryPublish
+// And this command to deploy a specific module in this project:
+//     ./gradlew :module_name:assembleRelease :module_name:artifactoryPublish
+
 def resolved_artifactory_username = ""
 def resolved_artifactory_password = ""
 if (hasProperty('artifactory_username') && hasProperty('artifactory_password')) {
