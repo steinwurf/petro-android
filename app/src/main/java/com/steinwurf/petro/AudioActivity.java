@@ -44,7 +44,7 @@ public class AudioActivity extends AppCompatActivity
             finish();
             return;
         }
-        mSampleStorage = new SampleStorage(0);
+        mSampleStorage = new SampleStorage();
         mAudioDecoder = AudioDecoder.build(
                 mAACSampleExtractor.getMPEGAudioObjectType(),
                 mAACSampleExtractor.getFrequencyIndex(),

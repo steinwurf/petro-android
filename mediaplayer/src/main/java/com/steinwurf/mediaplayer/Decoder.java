@@ -13,10 +13,16 @@ abstract class Decoder {
 
     private static final int TIMEOUT_US = 10000;
 
+    // The minimum time interval (in milliseconds) by which a sample should be delayed.
+    // We increase the value of startTime so that the playback is delayed by the specified
+    // interval. This is necessary to prevent starvation during playback and to allow implicit
+    // synchronization with other platforms.
+    private static final long MINIMUM_BUFFERING_DELAY_MS = 200;
+
     private final String type;
     private final SampleStorage sampleStorage;
 
-    protected final MediaFormat format;
+    private final MediaFormat format;
 
     Surface mSurface = null;
     private Thread mThread = null;
@@ -101,7 +107,6 @@ abstract class Decoder {
                     e.printStackTrace();
                     return;
                 }
-
                 decoder.configure(format, mSurface, null, 0);
 
                 decoder.start();
@@ -109,29 +114,23 @@ abstract class Decoder {
 
                 MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
 
-                long startTime = System.currentTimeMillis();
-                while (mRunning)
-                {
+                Long startTime = null;
+                while (mRunning) {
                     // Try to add new samples if our samples list contains some data
-                    if (sampleStorage.getCount() > 0)
-                    {
+                    if (sampleStorage.getCount() > 0) {
                         int inIndex = decoder.dequeueInputBuffer(TIMEOUT_US);
-                        if (inIndex >= 0)
-                        {
+                        if (inIndex >= 0) {
                             // fill inputBuffers[inputBufferIndex] with valid data
                             ByteBuffer buffer = inputBuffers[inIndex];
                             buffer.clear();
 
-                            try
-                            {
+                            try {
                                 // Pop the next sample from samples
                                 SampleStorage.Sample sample = sampleStorage.getNextSample();
                                 buffer.put(sample.data);
                                 decoder.queueInputBuffer(
                                         inIndex, 0, sample.data.length, sample.timestamp, 0);
-                            }
-                            catch (Exception e)
-                            {
+                            } catch (Exception e) {
                                 Log.e(TAG, "Failed to push buffer to decoder");
                                 e.printStackTrace();
                             }
@@ -139,60 +138,60 @@ abstract class Decoder {
                     }
 
                     int outIndex = decoder.dequeueOutputBuffer(info, TIMEOUT_US);
-                    switch (outIndex)
-                    {
-                        case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                            outputBuffersChanged(decoder);
-                            break;
 
-                        case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                            outputFormatChanged(decoder);
-                            break;
+                    try {
+                        switch (outIndex) {
+                            case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
+                                outputBuffersChanged(decoder);
+                                break;
 
-                        case MediaCodec.INFO_TRY_AGAIN_LATER:
-                            tryAgainLater(decoder);
-                            break;
-                        default:
-                            long sampleTime = info.presentationTimeUs / 1000;
-                            long playTime = System.currentTimeMillis() - startTime;
-                            long sleepTime =  sampleTime - playTime;
+                            case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
+                                outputFormatChanged(decoder);
+                                break;
 
-                            mLastSleepTime = sleepTime;
-                            mLastSampleTime = sampleTime;
+                            case MediaCodec.INFO_TRY_AGAIN_LATER:
+                                tryAgainLater(decoder);
+                                break;
+                            default:
 
-                            if (sleepTime > 0)
-                            {
-                                try
-                                {
+                                if (startTime == null) {
+                                    startTime = System.currentTimeMillis() + MINIMUM_BUFFERING_DELAY_MS;
+                                }
+                                long sampleTime = info.presentationTimeUs / 1000;
+                                long playTime = System.currentTimeMillis() - startTime;
+                                long sleepTime = sampleTime - playTime;
+
+                                mLastSleepTime = sleepTime;
+                                mLastSampleTime = sampleTime;
+
+                                if (sleepTime > 0) {
                                     Thread.sleep(sleepTime);
                                 }
-                                catch (InterruptedException e)
-                                {
-                                    e.printStackTrace();
+
+                                // Determine of the buffer should be dropped due to being too late
+                                if (mDropBufferLimit == 0 || sleepTime >= -mDropBufferLimit) {
+                                    render(decoder, outIndex);
+                                } else {
+                                    decoder.releaseOutputBuffer(outIndex, false);
+                                    mFrameDrops++;
+                                    Log.d(TAG, "Dropped Frame " + sleepTime);
                                 }
-                            }
+                                break;
+                        }
 
-                            // Determine of the buffer should be dropped due to being too late
-                            if (mDropBufferLimit == 0 || sleepTime >= -mDropBufferLimit) {
-                                render(decoder, outIndex);
-                            } else {
-                                decoder.releaseOutputBuffer(outIndex, false);
-                                mFrameDrops++;
-                                Log.d(TAG, "Dropped Frame " + sleepTime);
-                            }
+
+                        // All decoded frames have been rendered, we can stop playing now
+                        if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                            Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
                             break;
+                        }
                     }
-
-
-
-                    // All decoded frames have been rendered, we can stop playing now
-                    if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0)
-                    {
-                        Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
+                    catch (InterruptedException e) {
+                        e.printStackTrace();
                         break;
                     }
                 }
-
+                Log.d(TAG, "stopping and releasing decoder");
                 decoder.stop();
                 decoder.release();
             }
@@ -236,6 +235,7 @@ abstract class Decoder {
         mRunning = false;
         if (mThread != null)
         {
+            mThread.interrupt();
             try
             {
                 mThread.join();

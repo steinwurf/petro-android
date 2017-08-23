@@ -78,6 +78,7 @@ public class AudioDecoder extends Decoder {
     @Override
     public void stop() {
         super.stop();
+        mAudioTrack.stop();
     }
 
     @Override
