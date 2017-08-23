@@ -6,9 +6,12 @@ every change, see the Git log.
 
 Latest
 ------
+* tbd
+
+2.0.0
+-----
 * Major: Removed offset from sample storage. This functionality must now be
   performed outside of the SampleStorage.
-
 
 1.0.0
 -----
