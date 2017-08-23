@@ -15,10 +15,6 @@ public class VideoDecoder extends Decoder {
      */
     public static class H264SampleStorage extends SampleStorage
     {
-        public H264SampleStorage(long offset) {
-            super(offset);
-        }
-
         @Override
         public void addSample(long timestamp, byte[] data) {
             if (!hasNALUHeader(data)) {

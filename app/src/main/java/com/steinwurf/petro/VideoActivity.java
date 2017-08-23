@@ -56,7 +56,7 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
             return;
         }
 
-        mSampleStorage = new VideoDecoder.H264SampleStorage(0);
+        mSampleStorage = new VideoDecoder.H264SampleStorage();
         mRunning = true;
         mExtractorThread = new Thread(){
             public void run(){

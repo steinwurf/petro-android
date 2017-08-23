@@ -35,23 +35,9 @@ public class SampleStorage
     private final List<Sample> samples = Collections.synchronizedList(new LinkedList<Sample>());
 
     /**
-     * Offset in microseconds
-     */
-    public final long offset;
-
-    /**
      * Delay in microseconds
      */
     private long mDelay = 0;
-
-    /**
-     * Creates a sample storage
-     * @param offset timestamp offset in microseconds
-     */
-    public SampleStorage(long offset)
-    {
-        this.offset = offset;
-    }
 
     /**
      * Gets the set delay in microseconds
@@ -78,7 +64,6 @@ public class SampleStorage
      */
     public void addSample(long timestamp, byte[] data)
     {
-        timestamp -= offset;
         // The samples list is synchronized, so it can be accessed from multiple threads
         samples.add(new Sample(timestamp + mDelay, data.clone()));
     }

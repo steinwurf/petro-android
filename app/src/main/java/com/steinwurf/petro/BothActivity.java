@@ -65,7 +65,7 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
 
         mRunning = true;
 
-        mAudioSampleStorage = new SampleStorage(0);
+        mAudioSampleStorage = new SampleStorage();
         mAudioExtractorThread = new Thread(){
             public void run(){
                 while (mRunning && !mAACSampleExtractor.atEnd())
@@ -79,7 +79,7 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
         };
         mAudioExtractorThread.start();
 
-        mVideoSampleStorage = new VideoDecoder.H264SampleStorage(0);
+        mVideoSampleStorage = new VideoDecoder.H264SampleStorage();
         mVideoExtractorThread = new Thread(){
             public void run(){
                 ByteArrayOutputStream sample = new ByteArrayOutputStream();
