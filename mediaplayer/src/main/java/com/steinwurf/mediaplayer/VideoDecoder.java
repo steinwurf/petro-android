@@ -17,7 +17,7 @@ public class VideoDecoder extends Decoder {
     {
         @Override
         public void addSample(long timestamp, byte[] data) {
-            if (!hasNALUHeader(data)) {
+            if (isMissingNALUHeader(data)) {
                 Log.e(TAG, "No NALU header before sample");
                 return;
             }
@@ -32,9 +32,9 @@ public class VideoDecoder extends Decoder {
      */
     public static final byte[] NALU_HEADER = new byte[]{0x00, 0x00, 0x00, 0x01};
 
-    private static boolean hasNALUHeader(byte[] buffer)
+    private static boolean isMissingNALUHeader(byte[] buffer)
     {
-        return Arrays.equals(Arrays.copyOfRange(buffer, 0, 4), NALU_HEADER);
+        return !Arrays.equals(Arrays.copyOfRange(buffer, 0, 4), NALU_HEADER);
     }
 
     /**
@@ -48,11 +48,11 @@ public class VideoDecoder extends Decoder {
     public static VideoDecoder build(
             int width, int height, byte[] sps, byte[] pps, H264SampleStorage sampleStorage)
     {
-        if (!hasNALUHeader(sps)) {
+        if (isMissingNALUHeader(sps)) {
             Log.e(TAG, "No header before SPS");
             return null;
         }
-        if (!hasNALUHeader(pps)) {
+        if (isMissingNALUHeader(pps)) {
             Log.e(TAG, "No header before PPS");
             return null;
         }

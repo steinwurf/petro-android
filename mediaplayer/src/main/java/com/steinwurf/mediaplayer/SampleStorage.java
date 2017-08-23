@@ -8,7 +8,7 @@ public class SampleStorage
 {
     private static final String TAG = "SampleStorage";
 
-    protected class Sample
+    class Sample
     {
         /**
          * The timestamp in microseconds

@@ -4,7 +4,6 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.media.MediaCodec;
-import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.util.Log;
 
@@ -79,6 +78,7 @@ public class AudioDecoder extends Decoder {
     @Override
     public void stop() {
         super.stop();
+        mAudioTrack.stop();
     }
 
     @Override

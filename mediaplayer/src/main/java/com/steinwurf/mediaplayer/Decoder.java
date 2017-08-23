@@ -19,8 +19,6 @@ abstract class Decoder {
     // synchronization with other platforms.
     private static final long MINIMUM_BUFFERING_DELAY_MS = 200;
 
-    private Long mStartTime = null;
-
     private final String type;
     private final SampleStorage sampleStorage;
 
@@ -109,7 +107,6 @@ abstract class Decoder {
                     e.printStackTrace();
                     return;
                 }
-
                 decoder.configure(format, mSurface, null, 0);
 
                 decoder.start();
@@ -157,11 +154,11 @@ abstract class Decoder {
                                 break;
                             default:
 
-                                if (mStartTime == null) {
-                                    mStartTime = System.currentTimeMillis() + MINIMUM_BUFFERING_DELAY_MS;
+                                if (startTime == null) {
+                                    startTime = System.currentTimeMillis() + MINIMUM_BUFFERING_DELAY_MS;
                                 }
                                 long sampleTime = info.presentationTimeUs / 1000;
-                                long playTime = System.currentTimeMillis() - mStartTime;
+                                long playTime = System.currentTimeMillis() - startTime;
                                 long sleepTime = sampleTime - playTime;
 
                                 mLastSleepTime = sleepTime;
