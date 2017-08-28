@@ -170,7 +170,7 @@ abstract class Decoder {
 
                                 // Determine of the buffer should be dropped due to being too late
                                 if (mDropBufferLimit == 0 || sleepTime >= -mDropBufferLimit) {
-                                    render(decoder, outIndex);
+                                    render(decoder, info, outIndex);
                                 } else {
                                     decoder.releaseOutputBuffer(outIndex, false);
                                     mFrameDrops++;
@@ -223,9 +223,10 @@ abstract class Decoder {
     /**
      * Render the buffer at the give index
      * @param decoder The {@link MediaCodec}
+     * @param info The {@link MediaCodec.BufferInfo}.
      * @param index The index returned by @{@link MediaCodec#dequeueOutputBuffer(MediaCodec.BufferInfo, long)}
      */
-    protected abstract void render(MediaCodec decoder, int index);
+    protected abstract void render(MediaCodec decoder, MediaCodec.BufferInfo info, int index);
 
     /**
      * Stops the playback.

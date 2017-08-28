@@ -2,6 +2,7 @@ package com.steinwurf.mediaplayer;
 
 import android.media.MediaCodec;
 import android.media.MediaFormat;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Surface;
 
@@ -95,7 +96,7 @@ public class VideoDecoder extends Decoder {
     }
 
     @Override
-    protected void render(MediaCodec decoder, int outIndex) {
+    protected void render(MediaCodec decoder, MediaCodec.BufferInfo info, int outIndex) {
         decoder.releaseOutputBuffer(outIndex, true);
     }
 }
