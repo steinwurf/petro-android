@@ -97,16 +97,16 @@ public class AudioDecoder extends Decoder {
     }
 
     @Override
-    protected void render(MediaCodec decoder, int outIndex) {
+    protected void render(MediaCodec decoder, MediaCodec.BufferInfo info, int outIndex) {
         if (mOutputBuffers == null)
             mOutputBuffers = decoder.getOutputBuffers();
 
         ByteBuffer outputBuffer = mOutputBuffers[outIndex];
 
-        final byte[] chunk = new byte[outputBuffer.limit()];
+        final byte[] chunk = new byte[info.size];
         outputBuffer.get(chunk);
         outputBuffer.clear();
-        mAudioTrack.write(chunk, 0, chunk.length);
+        mAudioTrack.write(chunk, info.offset, chunk.length);
         decoder.releaseOutputBuffer(outIndex, false);
     }
 

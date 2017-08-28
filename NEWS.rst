@@ -6,7 +6,7 @@ every change, see the Git log.
 
 Latest
 ------
-* tbd
+* Patch: Fix sound stutter on older android devices.
 
 2.0.0
 -----
