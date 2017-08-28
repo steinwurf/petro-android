@@ -6,6 +6,9 @@ every change, see the Git log.
 
 Latest
 ------
+
+2.0.1
+-----
 * Patch: Fix sound stutter on older android devices.
 
 2.0.0

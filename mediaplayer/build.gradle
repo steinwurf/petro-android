@@ -1,9 +1,9 @@
 apply plugin: 'com.android.library'
 
 project.ext {
-    libraryVersionCode = 2
+    libraryVersionCode = 3
     libraryGroupId = 'com.steinwurf.mediaplayer'
-    libraryVersion = '2.0.0'
+    libraryVersion = '2.0.1'
     repositoryKey = 'libs-release-local'
 }
 
