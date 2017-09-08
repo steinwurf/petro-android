@@ -11,23 +11,9 @@ import java.util.Arrays;
 
 public class VideoDecoder extends Decoder {
 
-    /**
-     * A {@link SampleStorage} extension which checks the added samples for H264 headers.
-     */
-    public static class H264SampleStorage extends SampleStorage
-    {
-        @Override
-        public void addSample(long timestamp, byte[] data) {
-            if (isMissingNALUHeader(data)) {
-                Log.e(TAG, "No NALU header before sample");
-                return;
-            }
-            super.addSample(timestamp, data);
-        }
-    }
-
     private static final String TAG = "VideoDecoder";
     private static final String MIME = "video/avc";
+
     /**
      * A buffer containing a NALU header
      */
@@ -36,6 +22,30 @@ public class VideoDecoder extends Decoder {
     private static boolean isMissingNALUHeader(byte[] buffer)
     {
         return !Arrays.equals(Arrays.copyOfRange(buffer, 0, 4), NALU_HEADER);
+    }
+
+    private static class H264HeaderCheckerWrapper implements SampleProvider
+    {
+        final SampleProvider sampleProvider;
+
+        H264HeaderCheckerWrapper(SampleProvider sampleProvider)
+        {
+            this.sampleProvider = sampleProvider;
+        }
+
+        @Override
+        public long getCount() {
+            return sampleProvider.getCount();
+        }
+
+        @Override
+        public Sample getNextSample() {
+            Sample sample = sampleProvider.getNextSample();
+            if (isMissingNALUHeader(sample.data)) {
+                Log.e(TAG, "No NALU header before sample");
+            }
+            return sample;
+        }
     }
 
     /**
@@ -47,7 +57,7 @@ public class VideoDecoder extends Decoder {
      * @return {@link VideoDecoder} or null upon failure.
      */
     public static VideoDecoder build(
-            int width, int height, byte[] sps, byte[] pps, H264SampleStorage sampleStorage)
+            int width, int height, byte[] sps, byte[] pps, SampleProvider sampleProvider)
     {
         if (isMissingNALUHeader(sps)) {
             Log.e(TAG, "No header before SPS");
@@ -71,11 +81,11 @@ public class VideoDecoder extends Decoder {
         format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
         format.setInteger(MediaFormat.KEY_DURATION, Integer.MAX_VALUE);
 
-        return new VideoDecoder(format, sampleStorage);
+        return new VideoDecoder(format, sampleProvider);
     }
 
-    private VideoDecoder(MediaFormat format, H264SampleStorage sampleStorage) {
-        super(format, MIME, sampleStorage);
+    private VideoDecoder(MediaFormat format, SampleProvider sampleProvider) {
+        super(format, MIME, new H264HeaderCheckerWrapper(sampleProvider));
     }
 
     /**

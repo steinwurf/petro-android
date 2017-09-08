@@ -20,7 +20,7 @@ abstract class Decoder {
     private static final long MINIMUM_BUFFERING_DELAY_MS = 200;
 
     private final String type;
-    private final SampleStorage sampleStorage;
+    private final SampleProvider sampleStorage;
 
     private final MediaFormat format;
 
@@ -33,7 +33,7 @@ abstract class Decoder {
     private long mFrameDrops = 0;
     private long mDropBufferLimit = 50;
 
-    Decoder(MediaFormat format, String type, SampleStorage sampleStorage)
+    Decoder(MediaFormat format, String type, SampleProvider sampleStorage)
     {
         this.format = format;
         this.type = type;
@@ -126,7 +126,7 @@ abstract class Decoder {
 
                             try {
                                 // Pop the next sample from samples
-                                SampleStorage.Sample sample = sampleStorage.getNextSample();
+                                Sample sample = sampleStorage.getNextSample();
                                 buffer.put(sample.data);
                                 decoder.queueInputBuffer(
                                         inIndex, 0, sample.data.length, sample.timestamp, 0);
@@ -171,6 +171,7 @@ abstract class Decoder {
                                 // Determine of the buffer should be dropped due to being too late
                                 if (mDropBufferLimit == 0 || sleepTime >= -mDropBufferLimit) {
                                     render(decoder, info, outIndex);
+                                    Log.d(TAG, "sleeptime: " + sleepTime);
                                 } else {
                                     decoder.releaseOutputBuffer(outIndex, false);
                                     mFrameDrops++;

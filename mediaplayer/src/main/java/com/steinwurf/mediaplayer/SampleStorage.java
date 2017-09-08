@@ -4,33 +4,9 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class SampleStorage
+public class SampleStorage implements SampleProvider
 {
     private static final String TAG = "SampleStorage";
-
-    class Sample
-    {
-        /**
-         * The timestamp in microseconds
-         */
-        final long timestamp;
-
-        /**
-         * The data buffer
-         */
-        final byte[] data;
-
-        /**
-         * Constructs a sample
-         * @param timestamp timestamp in microseconds
-         * @param data data buffer
-         */
-        Sample(long timestamp, byte[] data)
-        {
-            this.timestamp = timestamp;
-            this.data = data;
-        }
-    }
 
     private final List<Sample> samples = Collections.synchronizedList(new LinkedList<Sample>());
 
@@ -72,7 +48,8 @@ public class SampleStorage
      * Returns the number of samples in the storage
      * @return the number of samples in the storage
      */
-    public int getCount()
+    @Override
+    public long getCount()
     {
         return samples.size();
     }
@@ -82,7 +59,8 @@ public class SampleStorage
      * @return the next {@link Sample}
      * @throws IndexOutOfBoundsException if count < 1.
      */
-    Sample getNextSample() throws IndexOutOfBoundsException
+    @Override
+    public Sample getNextSample() throws IndexOutOfBoundsException
     {
         Sample sample = samples.get(0);
         samples.remove(0);

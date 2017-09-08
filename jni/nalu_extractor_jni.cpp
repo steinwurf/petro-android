@@ -68,14 +68,6 @@ jbyteArray Java_com_steinwurf_mediaextractor_NALUExtractor_getSPS(
     return jsps;
 }
 
-void Java_com_steinwurf_mediaextractor_NALUExtractor_finalize(
-    JNIEnv* /*env*/, jobject /*thiz*/, jlong pointer)
-{
-    auto client = reinterpret_cast<nalu_extractor_jni*>(pointer);
-    assert(client);
-    delete client;
-}
-
 void Java_com_steinwurf_mediaextractor_NALUExtractor_setFilePath(
     JNIEnv* env, jobject thiz, jstring file_path)
 {
@@ -113,18 +105,18 @@ void Java_com_steinwurf_mediaextractor_NALUExtractor_reset(
     extractor->reset();
 }
 
-jbyteArray Java_com_steinwurf_mediaextractor_NALUExtractor_getSample(
+jbyteArray Java_com_steinwurf_mediaextractor_NALUExtractor_getNalu(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
     assert(!extractor->at_end());
 
-    std::vector<uint8_t> sample(
+    std::vector<uint8_t> nalu(
         extractor->nalu_data(),
         extractor->nalu_data() + extractor->nalu_size());
 
-    jbyteArray jsample = env->NewByteArray(sample.size());
-    env->SetByteArrayRegion(jsample, 0, sample.size(), (jbyte*)sample.data());
+    jbyteArray jsample = env->NewByteArray(nalu.size());
+    env->SetByteArrayRegion(jsample, 0, nalu.size(), (jbyte*)nalu.data());
     return jsample;
 }
 
@@ -149,6 +141,13 @@ jlong Java_com_steinwurf_mediaextractor_NALUExtractor_getSampleIndex(
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
     return extractor->sample_index();
+}
+
+jlong Java_com_steinwurf_mediaextractor_NALUExtractor_getSampleCount(
+    JNIEnv* env, jobject thiz)
+{
+    auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
+    return extractor->samples();
 }
 
 jlong Java_com_steinwurf_mediaextractor_NALUExtractor_getDuration(
@@ -177,6 +176,14 @@ void Java_com_steinwurf_mediaextractor_NALUExtractor_close(
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
     return extractor->close();
+}
+
+void Java_com_steinwurf_mediaextractor_NALUExtractor_finalize(
+    JNIEnv* /*env*/, jobject /*thiz*/, jlong pointer)
+{
+    auto client = reinterpret_cast<nalu_extractor_jni*>(pointer);
+    assert(client);
+    delete client;
 }
 
 #ifdef __cplusplus

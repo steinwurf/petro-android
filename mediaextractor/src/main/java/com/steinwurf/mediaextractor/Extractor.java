@@ -44,11 +44,6 @@ public abstract class Extractor
     public abstract void reset();
 
     /**
-     * Return the sample data
-     */
-    public abstract byte[] getSample();
-
-    /**
      * Return the decoding timestamp related to the current sample
      */
     public abstract long getDecodingTimestamp();
@@ -62,6 +57,11 @@ public abstract class Extractor
      * Return the current sample index
      */
     public abstract long getSampleIndex();
+
+    /**
+     * Return the number of samples
+     */
+    public abstract long getSampleCount();
 
     /**
      * Return the total media duration in microseconds
