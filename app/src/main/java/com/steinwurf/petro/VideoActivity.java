@@ -10,14 +10,12 @@ import android.content.Intent;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
 
-import com.steinwurf.mediaextractor.NALUExtractor;
 import com.steinwurf.mediaextractor.Extractor;
+import com.steinwurf.mediaextractor.NALUExtractor;
 import com.steinwurf.mediaextractor.SequenceParameterSet;
 import com.steinwurf.mediaplayer.Sample;
 import com.steinwurf.mediaplayer.SampleProvider;

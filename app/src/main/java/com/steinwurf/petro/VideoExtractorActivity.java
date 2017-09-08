@@ -7,22 +7,11 @@ package com.steinwurf.petro;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
-import android.os.Environment;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.TextureView;
-import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
-
-import com.steinwurf.mediaplayer.*;
 
 public class VideoExtractorActivity extends Activity implements TextureView.SurfaceTextureListener
 {
