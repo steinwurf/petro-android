@@ -25,13 +25,14 @@ public class AudioActivity extends AppCompatActivity
         public AACSampleExtractorSampleProvider(AACSampleExtractor extractor) {
             this.extractor = extractor;
         }
+
         @Override
-        public long getCount() {
-            return extractor.getSampleCount() - extractor.getSampleIndex();
+        public boolean hasSample() {
+            return !extractor.atEnd();
         }
 
         @Override
-        public Sample getNextSample() throws IndexOutOfBoundsException {
+        public Sample getSample() throws IndexOutOfBoundsException {
             if (extractor.atEnd())
                 throw new IndexOutOfBoundsException();
 

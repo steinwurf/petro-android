@@ -42,12 +42,12 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
         }
 
         @Override
-        public long getCount() {
-            return extractor.getSampleCount() - extractor.getSampleIndex();
+        public boolean hasSample() {
+            return !extractor.atEnd();
         }
 
         @Override
-        public Sample getNextSample() {
+        public Sample getSample() {
             if (extractor.atEnd())
                 throw new IndexOutOfBoundsException();
 

@@ -49,9 +49,9 @@ public class SampleStorage implements SampleProvider
      * @return the number of samples in the storage
      */
     @Override
-    public long getCount()
+    public boolean hasSample()
     {
-        return samples.size();
+        return samples.size() != 0;
     }
 
     /**
@@ -60,7 +60,7 @@ public class SampleStorage implements SampleProvider
      * @throws IndexOutOfBoundsException if count < 1.
      */
     @Override
-    public Sample getNextSample() throws IndexOutOfBoundsException
+    public Sample getSample() throws IndexOutOfBoundsException
     {
         Sample sample = samples.get(0);
         samples.remove(0);

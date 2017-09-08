@@ -2,7 +2,6 @@ package com.steinwurf.mediaplayer;
 
 import android.media.MediaCodec;
 import android.media.MediaFormat;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Surface;
 
@@ -34,13 +33,13 @@ public class VideoDecoder extends Decoder {
         }
 
         @Override
-        public long getCount() {
-            return sampleProvider.getCount();
+        public boolean hasSample() {
+            return sampleProvider.hasSample();
         }
 
         @Override
-        public Sample getNextSample() {
-            Sample sample = sampleProvider.getNextSample();
+        public Sample getSample() {
+            Sample sample = sampleProvider.getSample();
             if (isMissingNALUHeader(sample.data)) {
                 Log.e(TAG, "No NALU header before sample");
             }
