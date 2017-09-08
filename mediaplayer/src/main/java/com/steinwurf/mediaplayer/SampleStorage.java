@@ -57,7 +57,7 @@ public class SampleStorage implements SampleProvider
     /**
      * Returns the next {@link Sample}
      * @return the next {@link Sample}
-     * @throws IndexOutOfBoundsException if count < 1.
+     * @throws IndexOutOfBoundsException if no more samples are available.
      */
     @Override
     public Sample getSample() throws IndexOutOfBoundsException

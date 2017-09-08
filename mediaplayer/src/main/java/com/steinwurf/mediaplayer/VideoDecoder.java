@@ -53,6 +53,7 @@ public class VideoDecoder extends Decoder {
      * @param height The height of the video in pixels
      * @param sps The SPS buffer with a NALU header present.
      * @param pps The PPS buffer with a NALU header present.
+     * @param sampleProvider The sample provider
      * @return {@link VideoDecoder} or null upon failure.
      */
     public static VideoDecoder build(
