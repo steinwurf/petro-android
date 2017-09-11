@@ -26,19 +26,12 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
 {
     private static final String TAG = "BothActivity";
 
-
     private AudioDecoder mAudioDecoder;
-    private SampleStorage mAudioSampleStorage;
     private AACSampleExtractor mAACSampleExtractor;
-    Thread mAudioExtractorThread;
 
     private VideoDecoder mVideoDecoder;
-    private VideoDecoder.H264SampleStorage mVideoSampleStorage;
     private NALUExtractor mNALUExtractor;
-    private Thread mVideoExtractorThread;
     private Surface mSurface;
-
-    private boolean mRunning = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,53 +56,11 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
             return;
         }
 
-        mRunning = true;
-
-        mAudioSampleStorage = new SampleStorage();
-        mAudioExtractorThread = new Thread(){
-            public void run(){
-                while (mRunning && !mAACSampleExtractor.atEnd())
-                {
-                    mAudioSampleStorage.addSample(
-                            mAACSampleExtractor.getDecodingTimestamp(),
-                            mAACSampleExtractor.getSample());
-                    mAACSampleExtractor.advance();
-                }
-            }
-        };
-        mAudioExtractorThread.start();
-
-        mVideoSampleStorage = new VideoDecoder.H264SampleStorage();
-        mVideoExtractorThread = new Thread(){
-            public void run(){
-                ByteArrayOutputStream sample = new ByteArrayOutputStream();
-                while (mRunning && !mNALUExtractor.atEnd())
-                {
-                    long timestamp = mNALUExtractor.getPresentationTimestamp();
-                    try {
-                        sample.write(VideoDecoder.NALU_HEADER);
-                        sample.write(mNALUExtractor.getSample());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        sample.reset();
-                        continue;
-                    }
-                    mNALUExtractor.advance();
-                    if (mNALUExtractor.isBeginningOfAVCSample())
-                    {
-                        mVideoSampleStorage.addSample(timestamp, sample.toByteArray());
-                        sample.reset();
-                    }
-                }
-            }
-        };
-        mVideoExtractorThread.start();
-
         mAudioDecoder = AudioDecoder.build(
                 mAACSampleExtractor.getMPEGAudioObjectType(),
                 mAACSampleExtractor.getFrequencyIndex(),
                 mAACSampleExtractor.getChannelConfiguration(),
-                mAudioSampleStorage);
+                new AudioActivity.AACSampleExtractorSampleProvider(mAACSampleExtractor));
 
         ByteArrayOutputStream spsBuffer = new ByteArrayOutputStream();
         ByteArrayOutputStream ppsBuffer = new ByteArrayOutputStream();
@@ -138,7 +89,7 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
                 sequenceParameterSet.getVideoHeight(),
                 spsBuffer.toByteArray(),
                 ppsBuffer.toByteArray(),
-                mVideoSampleStorage);
+                new VideoActivity.NaluExtractorSampleProvider(mNALUExtractor));
 
         if (mVideoDecoder == null)
         {
@@ -161,30 +112,17 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mAudioExtractorThread != null && mVideoExtractorThread != null)
-        {
-            mRunning = false;
-            try {
-                mAudioExtractorThread.join();
-                mVideoExtractorThread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
 
-        if (mAACSampleExtractor != null)
-            mAACSampleExtractor.close();
-        if (mNALUExtractor != null)
-            mNALUExtractor.close();
+        mAACSampleExtractor.close();
+        mNALUExtractor.close();
     }
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-        mAudioDecoder.start();
-
         mSurface = new Surface(surface);
         mVideoDecoder.setSurface(mSurface);
         mVideoDecoder.start();
+        mAudioDecoder.start();
     }
 
     @Override

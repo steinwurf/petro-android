@@ -20,7 +20,7 @@ abstract class Decoder {
     private static final long MINIMUM_BUFFERING_DELAY_MS = 200;
 
     private final String type;
-    private final SampleStorage sampleStorage;
+    private final SampleProvider sampleProvider;
 
     private final MediaFormat format;
 
@@ -33,11 +33,11 @@ abstract class Decoder {
     private long mFrameDrops = 0;
     private long mDropBufferLimit = 50;
 
-    Decoder(MediaFormat format, String type, SampleStorage sampleStorage)
+    Decoder(MediaFormat format, String type, SampleProvider sampleProvider)
     {
         this.format = format;
         this.type = type;
-        this.sampleStorage = sampleStorage;
+        this.sampleProvider = sampleProvider;
     }
 
     /**
@@ -117,7 +117,7 @@ abstract class Decoder {
                 Long startTime = null;
                 while (mRunning) {
                     // Try to add new samples if our samples list contains some data
-                    if (sampleStorage.getCount() > 0) {
+                    if (sampleProvider.hasSample()) {
                         int inIndex = decoder.dequeueInputBuffer(TIMEOUT_US);
                         if (inIndex >= 0) {
                             // fill inputBuffers[inputBufferIndex] with valid data
@@ -126,7 +126,7 @@ abstract class Decoder {
 
                             try {
                                 // Pop the next sample from samples
-                                SampleStorage.Sample sample = sampleStorage.getNextSample();
+                                Sample sample = sampleProvider.getSample();
                                 buffer.put(sample.data);
                                 decoder.queueInputBuffer(
                                         inIndex, 0, sample.data.length, sample.timestamp, 0);

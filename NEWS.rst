@@ -6,6 +6,10 @@ every change, see the Git log.
 
 Latest
 ------
+* Major: Introduced `SampleProvider` to be used instead of `SampleStorage`.
+* Minor: Added `SampleCount` to extractor.
+* Major: Removed `getSample` from extractor.
+
 
 2.0.1
 -----

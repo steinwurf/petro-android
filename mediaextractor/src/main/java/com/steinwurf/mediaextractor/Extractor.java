@@ -16,6 +16,7 @@ public abstract class Extractor
 
     /**
      * Construct Extractor object.
+     * @param pointer long representing a pointer to the underlying native object.
      */
     protected Extractor(long pointer)
     {
@@ -29,12 +30,14 @@ public abstract class Extractor
     public abstract void setFilePath(String filePath);
 
     /**
-     * Returns the set file path.
+     * Returns the file path.
+     * @return the file path.
      */
     public abstract String getFilePath();
 
     /**
-     * Open the Extractor.
+     * Open the Extractor
+     * @throws UnableToOpenException if the extractor was unable to open.
      */
     public abstract void open() throws UnableToOpenException;
 
@@ -44,32 +47,38 @@ public abstract class Extractor
     public abstract void reset();
 
     /**
-     * Return the sample data
-     */
-    public abstract byte[] getSample();
-
-    /**
-     * Return the decoding timestamp related to the current sample
+     * Returns the decoding timestamp related to the current sample in microseconds
+     * @return the decoding timestamp related to the current sample in microseconds
      */
     public abstract long getDecodingTimestamp();
 
     /**
-     * Return the presentation timestamp related to the current sample
+     * Returns the presentation timestamp related to the current sample in microseconds
+     * @return the presentation timestamp related to the current sample in microseconds
      */
     public abstract long getPresentationTimestamp();
 
     /**
-     * Return the current sample index
+     * Returns the current sample index
+     * @return the current sample index
      */
     public abstract long getSampleIndex();
 
     /**
-     * Return the total media duration in microseconds
+     * Returns the number of samples
+     * @return the number of samples
+     */
+    public abstract long getSampleCount();
+
+    /**
+     * Returns the total media duration in microseconds
+     * @return the total media duration in microseconds
      */
     public abstract long getDuration();
 
     /**
-     * Return true if no more sample are available.
+     * Returns true if no more sample are available otherwise false.
+     * @return true if no more sample are available otherwise false.
      */
     public abstract boolean atEnd();
 

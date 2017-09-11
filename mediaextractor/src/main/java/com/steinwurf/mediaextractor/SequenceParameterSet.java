@@ -17,6 +17,7 @@ public class SequenceParameterSet {
 
     /**
      * Construct SPS object.
+     * @param pointer long representing a pointer to the underlying native object.
      */
     protected SequenceParameterSet(long pointer)
     {

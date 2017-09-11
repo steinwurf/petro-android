@@ -14,9 +14,11 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
 
-import com.steinwurf.mediaextractor.NALUExtractor;
 import com.steinwurf.mediaextractor.Extractor;
+import com.steinwurf.mediaextractor.NALUExtractor;
 import com.steinwurf.mediaextractor.SequenceParameterSet;
+import com.steinwurf.mediaplayer.Sample;
+import com.steinwurf.mediaplayer.SampleProvider;
 import com.steinwurf.mediaplayer.Utils;
 import com.steinwurf.mediaplayer.VideoDecoder;
 
@@ -28,12 +30,44 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
 {
     private static final String TAG = "VideoActivity";
 
+    public static class NaluExtractorSampleProvider implements SampleProvider
+    {
+        private final NALUExtractor extractor;
+
+        public NaluExtractorSampleProvider(NALUExtractor extractor)
+        {
+            this.extractor = extractor;
+        }
+
+        @Override
+        public boolean hasSample() {
+            return !extractor.atEnd();
+        }
+
+        @Override
+        public Sample getSample() {
+            if (extractor.atEnd())
+                throw new IndexOutOfBoundsException();
+
+            long timestamp = extractor.getPresentationTimestamp();
+            ByteArrayOutputStream data = new ByteArrayOutputStream();
+            try
+            {
+                do {
+                    data.write(VideoDecoder.NALU_HEADER);
+                    data.write(extractor.getNalu());
+                    extractor.advance();
+                } while  (!extractor.atEnd() && !extractor.isBeginningOfAVCSample());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return new Sample(timestamp, data.toByteArray());
+        }
+    }
+
     private VideoDecoder mVideoDecoder;
 
     private NALUExtractor mNALUExtractor;
-    private VideoDecoder.H264SampleStorage mSampleStorage;
-    private Thread mExtractorThread;
-    private boolean mRunning = false;
     private Surface mSurface;
 
     @Override
@@ -55,33 +89,6 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
             finish();
             return;
         }
-
-        mSampleStorage = new VideoDecoder.H264SampleStorage();
-        mRunning = true;
-        mExtractorThread = new Thread(){
-            public void run(){
-                ByteArrayOutputStream sample = new ByteArrayOutputStream();
-                while (mRunning && !mNALUExtractor.atEnd())
-                {
-                    long timestamp = mNALUExtractor.getPresentationTimestamp();
-                    try {
-                        sample.write(VideoDecoder.NALU_HEADER);
-                        sample.write(mNALUExtractor.getSample());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        sample.reset();
-                        continue;
-                    }
-                    mNALUExtractor.advance();
-                    if (mNALUExtractor.isBeginningOfAVCSample())
-                    {
-                        mSampleStorage.addSample(timestamp, sample.toByteArray());
-                        sample.reset();
-                    }
-                }
-            }
-        };
-        mExtractorThread.start();
 
         ByteArrayOutputStream spsBuffer = new ByteArrayOutputStream();
         ByteArrayOutputStream ppsBuffer = new ByteArrayOutputStream();
@@ -110,7 +117,7 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
                 sequenceParameterSet.getVideoHeight(),
                 spsBuffer.toByteArray(),
                 ppsBuffer.toByteArray(),
-                mSampleStorage);
+                new NaluExtractorSampleProvider(mNALUExtractor));
 
         if (mVideoDecoder == null)
         {
@@ -135,18 +142,7 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
     protected void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy");
-        if (mExtractorThread != null)
-        {
-            try {
-                mRunning = false;
-                mExtractorThread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        if (mNALUExtractor != null)
-            mNALUExtractor.close();
+        mNALUExtractor.close();
     }
 
     @Override

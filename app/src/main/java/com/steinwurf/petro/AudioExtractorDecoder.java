@@ -33,9 +33,6 @@ import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.util.Log;
 
-/**
- * @author taehwan
- */
 public class AudioExtractorDecoder extends Thread
 {
     private static final String AUDIO = "audio/";
@@ -255,7 +252,6 @@ public class AudioExtractorDecoder extends Thread
 
         audioTrack.stop();
         audioTrack.release();
-        audioTrack = null;
     }
 
     public void close()

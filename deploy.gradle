@@ -1,5 +1,6 @@
 apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'maven-publish'
+apply plugin: 'org.ajoberstar.grgit'
 
 // Use this command to deploy everything in this project:
 //     ./gradlew assembleRelease artifactoryPublish
@@ -8,6 +9,7 @@ apply plugin: 'maven-publish'
 
 def resolved_artifactory_username = ""
 def resolved_artifactory_password = ""
+
 if (hasProperty('artifactory_username') && hasProperty('artifactory_password')) {
     resolved_artifactory_username = artifactory_username
     resolved_artifactory_password = artifactory_password
@@ -24,10 +26,23 @@ publishing {
             version project.libraryVersion
             artifactId project.getName()
             artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
+            artifact androidJavadocsJar
 
             pom.withXml {
                 def dependencies = asNode().appendNode('dependencies')
-                configurations.getByName("_releaseCompile").getResolvedConfiguration().getFirstLevelModuleDependencies().each {
+                configurations.getByName("releaseCompileClasspath").getResolvedConfiguration().getFirstLevelModuleDependencies().each {
+
+                    /// Check if we are allowed to deploy.
+                    /// This check needs to be here, as the check will be performed every time a
+                    /// build happens.
+                    if (!libraryVersion.endsWith('SNAPSHOT') && !grgit.status().isClean())
+                    {
+                        throw new GradleException(
+                                "When deploying a release, you must NOT have any " +
+                                        "changes in your working copy!" +
+                                        "Make a snapshot release by appeding SNAPSHOT to release current" +
+                                        "changes.")
+                    }
 
                     // Skip android support libraries.
                     if (it.moduleGroup == 'com.android.support')
@@ -68,4 +83,18 @@ artifactory {
             publishPom = true
         }
     }
+}
+
+task androidJavadocs(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+
+    android.libraryVariants.all { variant ->
+        owner.classpath += variant.javaCompile.classpath
+    }
+}
+
+task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
+    classifier = 'javadoc'
+    from androidJavadocs.destinationDir
 }

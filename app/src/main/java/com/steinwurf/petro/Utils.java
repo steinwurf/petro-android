@@ -8,15 +8,11 @@ package com.steinwurf.petro;
 import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
-import android.net.DhcpInfo;
 import android.net.Uri;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
-import android.text.format.Formatter;
 
 public class Utils
 {

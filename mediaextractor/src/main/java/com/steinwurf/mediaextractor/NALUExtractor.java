@@ -40,6 +40,44 @@ public class NALUExtractor extends Extractor {
      */
     public native byte[] getSPS();
 
+    public native byte[] getNalu();
+
+    @Override
+    public native void setFilePath(String filePath);
+
+    @Override
+    public native String getFilePath();
+
+    @Override
+    public native void open() throws UnableToOpenException;
+
+    @Override
+    public native void reset();
+
+    @Override
+    public native long getDecodingTimestamp();
+
+    @Override
+    public native long getPresentationTimestamp();
+
+    @Override
+    public native long getSampleIndex();
+
+    @Override
+    public native long getSampleCount();
+
+    @Override
+    public native long getDuration();
+
+    @Override
+    public native boolean atEnd();
+
+    @Override
+    public native void advance();
+
+    @Override
+    public native void close();
+
     /**
      * Finalizes the object and it's underlying native part.
      */
@@ -55,40 +93,4 @@ public class NALUExtractor extends Extractor {
      * @param pointer A long representing a pointer to the underlying native object.
      */
     private native void finalize(long pointer);
-
-    @Override
-    public native void setFilePath(String filePath);
-
-    @Override
-    public native String getFilePath();
-
-    @Override
-    public native void open() throws UnableToOpenException;
-
-    @Override
-    public native void reset();
-
-    @Override
-    public native byte[] getSample();
-
-    @Override
-    public native long getDecodingTimestamp();
-
-    @Override
-    public native long getPresentationTimestamp();
-
-    @Override
-    public native long getSampleIndex();
-
-    @Override
-    public native long getDuration();
-
-    @Override
-    public native boolean atEnd();
-
-    @Override
-    public native void advance();
-
-    @Override
-    public native void close();
 }

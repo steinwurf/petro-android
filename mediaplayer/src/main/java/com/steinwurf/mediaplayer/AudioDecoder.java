@@ -25,11 +25,11 @@ public class AudioDecoder extends Decoder {
      * @param audioProfile The audio profile
      * @param sampleRateIndex The sample rate Index
      * @param channelCount The number of channels
-     * @param sampleStorage The sample storage
+     * @param sampleProvider The sample provider
      * @return a constructed AudioDecoder or null upon failure.
      */
     public static AudioDecoder build(
-            int audioProfile, int sampleRateIndex, int channelCount, SampleStorage sampleStorage)
+            int audioProfile, int sampleRateIndex, int channelCount, SampleProvider sampleProvider)
     {
         int sampleRate = SAMPLE_RATES[sampleRateIndex];
 
@@ -48,14 +48,14 @@ public class AudioDecoder extends Decoder {
         csd.flip();
         format.setByteBuffer("csd-0", csd); // add csd-0
 
-        return new AudioDecoder(format, sampleStorage);
+        return new AudioDecoder(format, sampleProvider);
     }
 
     private ByteBuffer[] mOutputBuffers = null;
     private AudioTrack mAudioTrack = null;
 
-    private AudioDecoder(MediaFormat format, SampleStorage sampleStorage) {
-        super(format, MIME, sampleStorage);
+    private AudioDecoder(MediaFormat format, SampleProvider sampleProvider) {
+        super(format, MIME, sampleProvider);
 
         int sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
 

@@ -2,7 +2,6 @@ package com.steinwurf.mediaplayer;
 
 import android.media.MediaCodec;
 import android.media.MediaFormat;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Surface;
 
@@ -11,23 +10,9 @@ import java.util.Arrays;
 
 public class VideoDecoder extends Decoder {
 
-    /**
-     * A {@link SampleStorage} extension which checks the added samples for H264 headers.
-     */
-    public static class H264SampleStorage extends SampleStorage
-    {
-        @Override
-        public void addSample(long timestamp, byte[] data) {
-            if (isMissingNALUHeader(data)) {
-                Log.e(TAG, "No NALU header before sample");
-                return;
-            }
-            super.addSample(timestamp, data);
-        }
-    }
-
     private static final String TAG = "VideoDecoder";
     private static final String MIME = "video/avc";
+
     /**
      * A buffer containing a NALU header
      */
@@ -38,16 +23,41 @@ public class VideoDecoder extends Decoder {
         return !Arrays.equals(Arrays.copyOfRange(buffer, 0, 4), NALU_HEADER);
     }
 
+    private static class H264HeaderCheckerWrapper implements SampleProvider
+    {
+        final SampleProvider sampleProvider;
+
+        H264HeaderCheckerWrapper(SampleProvider sampleProvider)
+        {
+            this.sampleProvider = sampleProvider;
+        }
+
+        @Override
+        public boolean hasSample() {
+            return sampleProvider.hasSample();
+        }
+
+        @Override
+        public Sample getSample() {
+            Sample sample = sampleProvider.getSample();
+            if (isMissingNALUHeader(sample.data)) {
+                Log.e(TAG, "No NALU header before sample");
+            }
+            return sample;
+        }
+    }
+
     /**
      * Returns a {@link VideoDecoder} or null upon failure.
      * @param width The width of the video in pixels
      * @param height The height of the video in pixels
      * @param sps The SPS buffer with a NALU header present.
      * @param pps The PPS buffer with a NALU header present.
+     * @param sampleProvider The sample provider
      * @return {@link VideoDecoder} or null upon failure.
      */
     public static VideoDecoder build(
-            int width, int height, byte[] sps, byte[] pps, H264SampleStorage sampleStorage)
+            int width, int height, byte[] sps, byte[] pps, SampleProvider sampleProvider)
     {
         if (isMissingNALUHeader(sps)) {
             Log.e(TAG, "No header before SPS");
@@ -71,11 +81,11 @@ public class VideoDecoder extends Decoder {
         format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
         format.setInteger(MediaFormat.KEY_DURATION, Integer.MAX_VALUE);
 
-        return new VideoDecoder(format, sampleStorage);
+        return new VideoDecoder(format, sampleProvider);
     }
 
-    private VideoDecoder(MediaFormat format, H264SampleStorage sampleStorage) {
-        super(format, MIME, sampleStorage);
+    private VideoDecoder(MediaFormat format, SampleProvider sampleProvider) {
+        super(format, MIME, new H264HeaderCheckerWrapper(sampleProvider));
     }
 
     /**

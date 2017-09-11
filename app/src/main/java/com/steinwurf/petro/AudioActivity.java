@@ -12,19 +12,43 @@ import android.support.v7.app.AppCompatActivity;
 import com.steinwurf.mediaextractor.AACSampleExtractor;
 import com.steinwurf.mediaextractor.Extractor;
 import com.steinwurf.mediaplayer.AudioDecoder;
-import com.steinwurf.mediaplayer.SampleStorage;
+import com.steinwurf.mediaplayer.Sample;
+import com.steinwurf.mediaplayer.SampleProvider;
 
 public class AudioActivity extends AppCompatActivity
 {
     private static final String TAG = "AudioActivity";
 
+    public static class AACSampleExtractorSampleProvider implements SampleProvider {
+        private final AACSampleExtractor extractor;
+
+        public AACSampleExtractorSampleProvider(AACSampleExtractor extractor) {
+            this.extractor = extractor;
+        }
+
+        @Override
+        public boolean hasSample() {
+            return !extractor.atEnd();
+        }
+
+        @Override
+        public Sample getSample() throws IndexOutOfBoundsException {
+            if (extractor.atEnd())
+                throw new IndexOutOfBoundsException();
+
+            Sample sample = new Sample(
+                    extractor.getPresentationTimestamp(),
+                    extractor.getSample());
+
+            extractor.advance();
+
+            return sample;
+        }
+    }
+
     private AudioDecoder mAudioDecoder;
-    private SampleStorage mSampleStorage;
 
     private AACSampleExtractor mAACSampleExtractor;
-
-    Thread mExtractorThread;
-    boolean mRunning = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -44,12 +68,13 @@ public class AudioActivity extends AppCompatActivity
             finish();
             return;
         }
-        mSampleStorage = new SampleStorage();
+
         mAudioDecoder = AudioDecoder.build(
                 mAACSampleExtractor.getMPEGAudioObjectType(),
                 mAACSampleExtractor.getFrequencyIndex(),
                 mAACSampleExtractor.getChannelConfiguration(),
-                mSampleStorage);
+                new AACSampleExtractorSampleProvider(mAACSampleExtractor));
+
         if (mAudioDecoder == null)
         {
             finish();
@@ -60,43 +85,18 @@ public class AudioActivity extends AppCompatActivity
     @Override
     protected void onStart() {
         super.onStart();
-        mRunning = true;
-        mExtractorThread = new Thread(){
-            public void run(){
-                while (mRunning && !mAACSampleExtractor.atEnd())
-                {
-                    mSampleStorage.addSample(
-                            mAACSampleExtractor.getDecodingTimestamp(),
-                            mAACSampleExtractor.getSample());
-                    mAACSampleExtractor.advance();
-                }
-            }
-        };
-
-        mExtractorThread.start();
         mAudioDecoder.start();
     }
 
     @Override
-    protected void onStop()
-    {
-        if (mExtractorThread != null) {
-            try {
-                mRunning = false;
-                mExtractorThread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        mAudioDecoder.stop();
+    protected void onStop() {
         super.onStop();
+        mAudioDecoder.stop();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
         mAACSampleExtractor.close();
     }
 }

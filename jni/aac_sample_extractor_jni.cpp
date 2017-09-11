@@ -76,14 +76,6 @@ jint Java_com_steinwurf_mediaextractor_AACSampleExtractor_getChannelConfiguratio
     return extractor->channel_configuration();
 }
 
-void Java_com_steinwurf_mediaextractor_AACSampleExtractor_finalize(
-    JNIEnv* /*env*/, jobject /*thiz*/, jlong pointer)
-{
-    auto client = reinterpret_cast<aac_sample_extractor_jni*>(pointer);
-    assert(client);
-    delete client;
-}
-
 void Java_com_steinwurf_mediaextractor_AACSampleExtractor_setFilePath(
     JNIEnv* env, jobject thiz, jstring file_path)
 {
@@ -158,6 +150,14 @@ jlong Java_com_steinwurf_mediaextractor_AACSampleExtractor_getSampleIndex(
     return extractor->sample_index();
 }
 
+jlong Java_com_steinwurf_mediaextractor_AACSampleExtractor_getSampleCount(
+    JNIEnv* env, jobject thiz)
+{
+    auto extractor =
+        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+    return extractor->samples();
+}
+
 jlong Java_com_steinwurf_mediaextractor_AACSampleExtractor_getDuration(
     JNIEnv* env, jobject thiz)
 {
@@ -190,7 +190,13 @@ void Java_com_steinwurf_mediaextractor_AACSampleExtractor_close(
     return extractor->close();
 }
 
-
+void Java_com_steinwurf_mediaextractor_AACSampleExtractor_finalize(
+    JNIEnv* /*env*/, jobject /*thiz*/, jlong pointer)
+{
+    auto client = reinterpret_cast<aac_sample_extractor_jni*>(pointer);
+    assert(client);
+    delete client;
+}
 
 #ifdef __cplusplus
 }
