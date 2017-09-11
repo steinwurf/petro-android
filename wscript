@@ -4,7 +4,7 @@
 import os
 
 APPNAME = 'petro-android'
-VERSION = '2.0.1'
+VERSION = '3.0.0'
 
 
 def configure(conf):
