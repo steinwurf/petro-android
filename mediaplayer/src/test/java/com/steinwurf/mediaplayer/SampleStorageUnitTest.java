@@ -27,7 +27,7 @@ public class SampleStorageUnitTest {
 
         sampleStorage.addSample(timestamp2, data2);
         assertTrue(sampleStorage.hasSample());
-        assertEquals(2, sampleStorage.sampleCount());
+        assertEquals(4, sampleStorage.sampleCount());
 
         {
             Sample sample1 = sampleStorage.getSample();
