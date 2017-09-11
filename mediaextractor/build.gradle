@@ -4,7 +4,7 @@ project.ext {
     libraryVersionCode = 1
     libraryGroupId = 'com.steinwurf.mediaextractor'
     libraryVersion = '1.0.0'
-    repositoryKey = 'libs-release-local'
+    repositoryKey = 'libs-' + (libraryVersion.endsWith('SNAPSHOT') ? 'snapshots' : 'release') + '-local'
 }
 
 android {

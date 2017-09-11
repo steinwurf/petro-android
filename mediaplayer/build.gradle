@@ -4,7 +4,7 @@ project.ext {
     libraryVersionCode = 3
     libraryGroupId = 'com.steinwurf.mediaplayer'
     libraryVersion = '2.0.1'
-    repositoryKey = 'libs-release-local'
+    repositoryKey = 'libs-' + (libraryVersion.endsWith('SNAPSHOT') ? 'snapshots' : 'release') + '-local'
 }
 
 android {
