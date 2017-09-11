@@ -79,6 +79,9 @@ def run_tests(properties):
     command += get_tool_options(properties)
     run_command(command)
 
+    # Gradle builds the APK (this should be run after the waf build)
+    run_command(['./gradlew', 'test', '--info'])
+
     device_id = properties['tool_options']['device_id']
     # Remove any previously installed versions of the app from the device
     command = 'ANDROID_SERIAL={0} ./gradlew uninstallAll'.format(device_id)

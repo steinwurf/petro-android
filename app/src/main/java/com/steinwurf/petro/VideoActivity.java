@@ -129,11 +129,11 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
 
         Point displayMetrics  = Utils.getRealMetrics(this);
         textureView.setTransform(
-                Utils.fitScaleMatrix(
+                Utils.fitScale(
                         sequenceParameterSet.getVideoWidth(),
                         sequenceParameterSet.getVideoHeight(),
                         displayMetrics.x,
-                        displayMetrics.y));
+                        displayMetrics.y).toMatrix());
         textureView.setSurfaceTextureListener(this);
 
     }
