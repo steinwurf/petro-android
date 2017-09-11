@@ -13,6 +13,8 @@ import android.os.Bundle;
 import android.view.Surface;
 import android.view.TextureView;
 
+import com.steinwurf.mediaplayer.Utils;
+
 public class VideoExtractorActivity extends Activity implements TextureView.SurfaceTextureListener
 {
 
@@ -36,11 +38,11 @@ public class VideoExtractorActivity extends Activity implements TextureView.Surf
 
         Point displayMetrics  = com.steinwurf.mediaplayer.Utils.getRealMetrics(this);
         textureView.setTransform(
-                com.steinwurf.mediaplayer.Utils.fitScaleMatrix(
+                Utils.fitScale(
                         mVideoDecoder.getVideoWidth(),
                         mVideoDecoder.getVideoHeight(),
                         displayMetrics.x,
-                        displayMetrics.y));
+                        displayMetrics.y).toMatrix());
         textureView.setSurfaceTextureListener(this);
     }
 

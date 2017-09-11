@@ -17,7 +17,9 @@ import com.steinwurf.mediaextractor.AACSampleExtractor;
 import com.steinwurf.mediaextractor.Extractor;
 import com.steinwurf.mediaextractor.NALUExtractor;
 import com.steinwurf.mediaextractor.SequenceParameterSet;
-import com.steinwurf.mediaplayer.*;
+import com.steinwurf.mediaplayer.AudioDecoder;
+import com.steinwurf.mediaplayer.Utils;
+import com.steinwurf.mediaplayer.VideoDecoder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -100,12 +102,11 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
         TextureView textureView = findViewById(R.id.textureView);
 
         Point displayMetrics  = com.steinwurf.mediaplayer.Utils.getRealMetrics(this);
-        textureView.setTransform(
-                com.steinwurf.mediaplayer.Utils.fitScaleMatrix(
-                        sequenceParameterSet.getVideoWidth(),
-                        sequenceParameterSet.getVideoHeight(),
-                        displayMetrics.x,
-                        displayMetrics.y));
+        textureView.setTransform(Utils.fitScale(
+                sequenceParameterSet.getVideoWidth(),
+                sequenceParameterSet.getVideoHeight(),
+                displayMetrics.x,
+                displayMetrics.y).toMatrix());
         textureView.setSurfaceTextureListener(this);
     }
 

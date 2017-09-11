@@ -5,6 +5,8 @@ import android.media.MediaFormat;
 import android.util.Log;
 import android.view.Surface;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -33,7 +35,12 @@ abstract class Decoder {
     private long mFrameDrops = 0;
     private long mDropBufferLimit = 50;
 
-    Decoder(MediaFormat format, String type, SampleProvider sampleProvider)
+    /**
+     * Delay in microseconds
+     */
+    private long mDelayUs = 0;
+
+    Decoder(@NotNull MediaFormat format, String type, @NotNull SampleProvider sampleProvider)
     {
         this.format = format;
         this.type = type;
@@ -87,6 +94,24 @@ abstract class Decoder {
     }
 
     /**
+     * Gets the set delay in microseconds
+     * @return delay in microseconds
+     */
+    public long getDelay()
+    {
+        return mDelayUs;
+    }
+
+    /**
+     * Sets the delay in microseconds
+     * @param delay delay in microseconds
+     */
+    public void setDelay(long delay)
+    {
+        mDelayUs = delay;
+    }
+
+    /**
      * Starts the playback
      */
     public void start() {
@@ -129,7 +154,11 @@ abstract class Decoder {
                                 Sample sample = sampleProvider.getSample();
                                 buffer.put(sample.data);
                                 decoder.queueInputBuffer(
-                                        inIndex, 0, sample.data.length, sample.timestamp, 0);
+                                        inIndex,
+                                        0,
+                                        sample.data.length,
+                                        sample.timestamp + mDelayUs,
+                                        0);
                             } catch (Exception e) {
                                 Log.e(TAG, "Failed to push buffer to decoder");
                                 e.printStackTrace();

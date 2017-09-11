@@ -8,48 +8,35 @@ public class SampleStorage implements SampleProvider
 {
     private static final String TAG = "SampleStorage";
 
-    private final List<Sample> samples = Collections.synchronizedList(new LinkedList<Sample>());
-
-    /**
-     * Delay in microseconds
-     */
-    private long mDelay = 0;
-
-    /**
-     * Gets the set delay in microseconds
-     * @return delay in microseconds
-     */
-    public long getDelay()
-    {
-        return mDelay;
-    }
-
-    /**
-     * Sets the delay in microseconds
-     * @param delay delay in microseconds
-     */
-    public void setDelay(long delay)
-    {
-        mDelay = delay;
-    }
+    private final List<Sample> samples = new LinkedList<>();
 
     /**
      * Adds a sample to the storage (this operation is synchronized)
      * @param timestamp timestamp in microseconds
      * @param data data buffer
      */
-    public void addSample(long timestamp, byte[] data)
+    public synchronized void addSample(long timestamp, byte[] data)
     {
         // The samples list is synchronized, so it can be accessed from multiple threads
-        samples.add(new Sample(timestamp + mDelay, data.clone()));
+        samples.add(new Sample(timestamp, data.clone()));
+        Sample sample;
     }
 
     /**
      * Returns the number of samples in the storage
      * @return the number of samples in the storage
      */
+    public synchronized long sampleCount()
+    {
+        return samples.size();
+    }
+
+    /**
+     * Returns true if the sample provider has a sample available
+     * @return true if the sample provider has a sample available
+     */
     @Override
-    public boolean hasSample()
+    public synchronized boolean hasSample()
     {
         return samples.size() != 0;
     }
@@ -62,8 +49,11 @@ public class SampleStorage implements SampleProvider
     @Override
     public Sample getSample() throws IndexOutOfBoundsException
     {
-        Sample sample = samples.get(0);
-        samples.remove(0);
+        Sample sample;
+        synchronized (this) {
+            sample = samples.get(0);
+            samples.remove(0);
+        }
         return sample;
     }
 }

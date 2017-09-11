@@ -69,20 +69,43 @@ public class Utils {
         return width / r + ":" + height / r;
     }
 
+    public static class Scale
+    {
+        public final float sx;
+        public final float sy;
+        public final float px;
+        public final float py;
+
+        Scale(float sx, float sy, float px, float py)
+        {
+            this.sx = sx;
+            this.sy = sy;
+            this.px = px;
+            this.py = py;
+        }
+
+        /**
+         * Returns a scaled {@link Matrix} to be used with {@link Matrix#setScale}.
+         * @return a scaled {@link Matrix} to be used with {@link Matrix#setScale}.
+         */
+        public Matrix toMatrix() {
+            Matrix matrix = new Matrix();
+            matrix.setScale(sx, sy, px, py);
+            return matrix;
+        }
+    }
+
     /**
-     * Returns a {@link Matrix} to be used
-     * with {@link android.view.TextureView#setTransform(Matrix)}.
-     * This will expand the video to fill the view, potentially losing some content, depending on
-     * the aspect ratio of the view and video.
+     * Returns a {@link Scale} that will fill the view.
+     * With this approach some content may be lost, depending on the aspect ratio of the view
+     * and video.
      * @param videoWidth The width of the video
      * @param videoHeight The height of the video
      * @param viewWidth The width of the view
      * @param viewHeight The height of the view
-     * @return {@link Matrix} to be used
-     * with {@link android.view.TextureView#setTransform(Matrix)}.
+     * @return a {@link Scale}.
      */
-    public static Matrix fillScaleMatrix(int videoWidth, int videoHeight,
-                                         int viewWidth, int viewHeight)
+    public static Scale fillScale(int videoWidth, int videoHeight, int viewWidth, int viewHeight)
     {
         float scale = Math.max(
                 (float)viewHeight / videoHeight,
@@ -90,30 +113,24 @@ public class Utils {
 
         float scaledWidth = videoWidth * scale;
         float scaledHeight = videoHeight * scale;
-
-        final Matrix matrix = new Matrix();
-        matrix.setScale(
+        return new Scale(
                 scaledWidth / viewWidth,
                 scaledHeight / viewHeight,
                 viewWidth / 2f,
                 viewHeight / 2f);
-        return matrix;
     }
 
     /**
-     * Returns a {@link Matrix} to be used
-     * with {@link android.view.TextureView#setTransform(Matrix)}.
+     * Returns a {@link Scale} that will fit the view.
      * This will expand the video to fit the view, potentially adding black bars, depending on
      * the aspect ratio of the view and video.
      * @param videoWidth The width of the video
      * @param videoHeight The height of the video
      * @param viewWidth The width of the view
      * @param viewHeight The height of the view
-     * @return {@link Matrix} to be used
-     * with {@link android.view.TextureView#setTransform(Matrix)}.
+     * @return a {@link Scale} that will fit the view.
      */
-    public static Matrix fitScaleMatrix(int videoWidth, int videoHeight,
-                                        int viewWidth, int viewHeight)
+    public static Scale fitScale(int videoWidth, int videoHeight, int viewWidth, int viewHeight)
     {
         float scale = Math.min(
                 (float)viewHeight / videoHeight,
@@ -122,12 +139,10 @@ public class Utils {
         float scaledWidth = videoWidth * scale;
         float scaledHeight = videoHeight * scale;
 
-        final Matrix matrix = new Matrix();
-        matrix.setScale(
+        return new Scale(
                 scaledWidth / viewWidth,
                 scaledHeight / viewHeight,
                 viewWidth / 2f,
                 viewHeight / 2f);
-        return matrix;
     }
 }
