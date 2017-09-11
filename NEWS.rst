@@ -6,6 +6,10 @@ every change, see the Git log.
 
 Latest
 ------
+* tbd
+
+4.0.0
+-----
 * Major: Changed `mediaplayer.Utils` API to return custom `Scale` object. Use
   the `Scale` object's `toMatrix` method to get the scaled `Matrix`.
 * Minor: Added `sampleCount` to `SampleStorage`.
