@@ -1,9 +1,9 @@
 apply plugin: 'com.android.library'
 
 project.ext {
-    libraryVersionCode = 3
+    libraryVersionCode = 6
     libraryGroupId = 'com.steinwurf.mediaextractor'
-    libraryVersion = '4.0.0'
+    libraryVersion = '5.0.0'
     repositoryKey = 'libs-' + (libraryVersion.endsWith('SNAPSHOT') ? 'snapshots' : 'release') + '-local'
 }
 

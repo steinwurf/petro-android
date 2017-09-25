@@ -1,6 +1,5 @@
 apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'maven-publish'
-apply plugin: 'org.ajoberstar.grgit'
 
 // Use this command to deploy everything in this project:
 //     ./gradlew assembleRelease artifactoryPublish
@@ -31,18 +30,6 @@ publishing {
             pom.withXml {
                 def dependencies = asNode().appendNode('dependencies')
                 configurations.getByName("releaseCompileClasspath").getResolvedConfiguration().getFirstLevelModuleDependencies().each {
-
-                    /// Check if we are allowed to deploy.
-                    /// This check needs to be here, as the check will be performed every time a
-                    /// build happens.
-                    if (!libraryVersion.endsWith('SNAPSHOT') && !grgit.status().isClean())
-                    {
-                        throw new GradleException(
-                                "When deploying a release, you must NOT have any " +
-                                        "changes in your working copy!" +
-                                        "Make a snapshot release by appeding SNAPSHOT to release current" +
-                                        "changes.")
-                    }
 
                     // Skip android support libraries.
                     if (it.moduleGroup == 'com.android.support')

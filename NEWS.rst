@@ -8,6 +8,10 @@ Latest
 ------
 * tbd
 
+5.0.0
+-----
+* Major: Deploy to artifactory.
+
 4.0.0
 -----
 * Major: Changed `mediaplayer.Utils` API to return custom `Scale` object. Use
