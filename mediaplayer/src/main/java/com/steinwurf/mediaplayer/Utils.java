@@ -71,10 +71,10 @@ public class Utils {
 
     public static class Scale
     {
-        public final float sx;
-        public final float sy;
-        public final float px;
-        public final float py;
+        final float sx;
+        final float sy;
+        final float px;
+        final float py;
 
         Scale(float sx, float sy, float px, float py)
         {
