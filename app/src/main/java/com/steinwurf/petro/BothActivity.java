@@ -122,8 +122,13 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
         mSurface = new Surface(surface);
         mVideoDecoder.setSurface(mSurface);
-        mVideoDecoder.start();
-        mAudioDecoder.start();
+
+        try {
+            mVideoDecoder.start();
+            mAudioDecoder.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

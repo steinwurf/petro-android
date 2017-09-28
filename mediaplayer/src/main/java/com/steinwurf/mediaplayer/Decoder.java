@@ -114,28 +114,20 @@ abstract class Decoder {
     /**
      * Starts the playback
      */
-    public void start() {
+    public void start() throws IOException {
         mRunning = true;
+
+        final MediaCodec decoder = MediaCodec.createDecoderByType(type);
+        decoder.configure(format, mSurface, null, 0);
+        decoder.start();
+
+        final ByteBuffer[] inputBuffers = decoder.getInputBuffers();
+
         mThread = new Thread(new Runnable()
         {
             @Override
             public void run()
             {
-                mRunning = true;
-                MediaCodec decoder;
-                try
-                {
-                    decoder = MediaCodec.createDecoderByType(type);
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                    return;
-                }
-                decoder.configure(format, mSurface, null, 0);
-
-                decoder.start();
-                ByteBuffer[] inputBuffers = decoder.getInputBuffers();
 
                 MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
 
