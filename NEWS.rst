@@ -6,6 +6,10 @@ every change, see the Git log.
 
 Latest
 ------
+* tbd
+
+6.0.0
+-----
 * Major: Make sure exceptions can be catched when starting a ``****oDecoder``.
 
 5.0.0
