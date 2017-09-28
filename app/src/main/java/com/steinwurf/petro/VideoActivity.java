@@ -150,7 +150,11 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
 
         mSurface = new Surface(surface);
         mVideoDecoder.setSurface(mSurface);
-        mVideoDecoder.start();
+        try {
+            mVideoDecoder.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

@@ -5,6 +5,7 @@ import android.media.MediaFormat;
 import android.util.Log;
 import android.view.Surface;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -98,10 +99,14 @@ public class VideoDecoder extends Decoder {
         mSurface = surface;
     }
 
+
+    /**
+     * Starts the playback. Call this after {@link VideoDecoder#setSurface(Surface)} returns.
+     */
     @Override
-    public void start() {
+    public void start() throws IOException {
         if (mSurface == null)
-            throw new AssertionError();
+            throw new IllegalStateException();
         super.start();
     }
 

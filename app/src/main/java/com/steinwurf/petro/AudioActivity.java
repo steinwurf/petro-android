@@ -15,6 +15,8 @@ import com.steinwurf.mediaplayer.AudioDecoder;
 import com.steinwurf.mediaplayer.Sample;
 import com.steinwurf.mediaplayer.SampleProvider;
 
+import java.io.IOException;
+
 public class AudioActivity extends AppCompatActivity
 {
     private static final String TAG = "AudioActivity";
@@ -78,14 +80,17 @@ public class AudioActivity extends AppCompatActivity
         if (mAudioDecoder == null)
         {
             finish();
-            return;
         }
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        mAudioDecoder.start();
+        try {
+            mAudioDecoder.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
