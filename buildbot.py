@@ -29,6 +29,20 @@ def get_tool_options(properties):
     return options
 
 
+def get_sdk_package_versions():
+    # We extract compileSdkVersion and buildToolsVersion from build.gradle
+    versions = [None, None]
+    with open('build.gradle') as f:
+        for line in f:
+            # The version assigments follow this format: "name = value"
+            tokens = line.strip().split(' ')
+            if tokens[0] == 'compileSdkVersion':
+                versions[0] = tokens[2].strip("'\"")
+            elif tokens[0] == 'buildToolsVersion':
+                versions[1] = tokens[2].strip("'\"")
+    return versions
+
+
 def configure(properties):
     # Configure this project with our waf
     command = [sys.executable, 'waf']
@@ -55,14 +69,19 @@ def configure(properties):
 
     run_command(command)
 
-    # Install the Android build-tools version that is used in app/build.gradle
+    # The required package versions are extracted from build.gradle
+    versions = get_sdk_package_versions()
+    if None in versions:
+        raise Exception('Insufficient package version info', versions)
+
+    # Install the required Android compileSdkVersion
     command = 'echo y | $ANDROID_HOME/tools/android update sdk --all ' \
-              '--filter build-tools-24.0.3 --no-ui'
+              '--filter android-{} --no-ui'.format(versions[0])
     run_command(command, shell=True)
 
-    # The required Android compileSdkVersion is specified in app/build.gradle
+    # Install the Android build-tools version
     command = 'echo y | $ANDROID_HOME/tools/android update sdk --all ' \
-              '--filter android-24 --no-ui'
+              '--filter build-tools-{} --no-ui'.format(versions[1])
     run_command(command, shell=True)
 
 
