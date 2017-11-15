@@ -22,11 +22,12 @@ def build(bld):
 
     if bld.is_toplevel():
 
-        # Install the APK files from "app/gradle_build/outputs/apk"
+        # Install the APK files from "app/gradle_build/outputs/apk/debug"
         if bld.has_tool_option('install_path'):
             install_path = bld.get_tool_option('install_path')
             install_path = os.path.abspath(os.path.expanduser(install_path))
-            start_dir = bld.path.find_dir('app/gradle_build/outputs/apk')
+            start_dir = bld.path.find_dir(
+                'app/gradle_build/outputs/apk/debug')
             relative_dir = bld.bldnode.path_from(bld.srcnode)
             bld.install_files(os.path.join(install_path, relative_dir),
                               start_dir.ant_glob('*.apk'),
