@@ -34,13 +34,13 @@ jint JNI_OnLoad(JavaVM* vm, void* /*reserved*/)
 extern "C" {
 #endif
 
-jlong Java_com_steinwurf_mediaextractor_AACSampleExtractor_init(
+jlong Java_com_steinwurf_petro_AACSampleExtractor_init(
     JNIEnv* /*env*/, jclass /*clazz*/)
 {
     return reinterpret_cast<jlong>(new aac_sample_extractor_jni());
 }
 
-jbyteArray Java_com_steinwurf_mediaextractor_AACSampleExtractor_getADTSHeader(
+jbyteArray Java_com_steinwurf_petro_AACSampleExtractor_getADTSHeader(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -52,7 +52,7 @@ jbyteArray Java_com_steinwurf_mediaextractor_AACSampleExtractor_getADTSHeader(
     return jadts;
 }
 
-jint Java_com_steinwurf_mediaextractor_AACSampleExtractor_getMPEGAudioObjectType(
+jint Java_com_steinwurf_petro_AACSampleExtractor_getMPEGAudioObjectType(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -60,7 +60,7 @@ jint Java_com_steinwurf_mediaextractor_AACSampleExtractor_getMPEGAudioObjectType
     return extractor->mpeg_audio_object_type();
 }
 
-jint Java_com_steinwurf_mediaextractor_AACSampleExtractor_getFrequencyIndex(
+jint Java_com_steinwurf_petro_AACSampleExtractor_getFrequencyIndex(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -68,7 +68,7 @@ jint Java_com_steinwurf_mediaextractor_AACSampleExtractor_getFrequencyIndex(
     return extractor->frequency_index();
 }
 
-jint Java_com_steinwurf_mediaextractor_AACSampleExtractor_getChannelConfiguration(
+jint Java_com_steinwurf_petro_AACSampleExtractor_getChannelConfiguration(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -76,7 +76,7 @@ jint Java_com_steinwurf_mediaextractor_AACSampleExtractor_getChannelConfiguratio
     return extractor->channel_configuration();
 }
 
-void Java_com_steinwurf_mediaextractor_AACSampleExtractor_setFilePath(
+void Java_com_steinwurf_petro_AACSampleExtractor_setFilePath(
     JNIEnv* env, jobject thiz, jstring file_path)
 {
     auto extractor =
@@ -84,7 +84,7 @@ void Java_com_steinwurf_mediaextractor_AACSampleExtractor_setFilePath(
     extractor->set_file_path(jutils::java_string_to_string(env, file_path));
 }
 
-jstring Java_com_steinwurf_mediaextractor_AACSampleExtractor_getFilePath(
+jstring Java_com_steinwurf_petro_AACSampleExtractor_getFilePath(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -92,7 +92,7 @@ jstring Java_com_steinwurf_mediaextractor_AACSampleExtractor_getFilePath(
     return jutils::string_to_java_string(env, extractor->file_path());
 }
 
-void Java_com_steinwurf_mediaextractor_AACSampleExtractor_open(
+void Java_com_steinwurf_petro_AACSampleExtractor_open(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -102,12 +102,12 @@ void Java_com_steinwurf_mediaextractor_AACSampleExtractor_open(
     if (error)
     {
         auto exception_class = jutils::get_class(
-            env, "com/steinwurf/mediaextractor/Extractor$UnableToOpenException");
+            env, "com/steinwurf/petro/Extractor$UnableToOpenException");
         env->ThrowNew(exception_class, error.message().c_str());
     }
 }
 
-void Java_com_steinwurf_mediaextractor_AACSampleExtractor_reset(
+void Java_com_steinwurf_petro_AACSampleExtractor_reset(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -115,7 +115,7 @@ void Java_com_steinwurf_mediaextractor_AACSampleExtractor_reset(
     extractor->reset();
 }
 
-jbyteArray Java_com_steinwurf_mediaextractor_AACSampleExtractor_getSample(
+jbyteArray Java_com_steinwurf_petro_AACSampleExtractor_getSample(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -126,7 +126,7 @@ jbyteArray Java_com_steinwurf_mediaextractor_AACSampleExtractor_getSample(
     return jsample;
 }
 
-jlong Java_com_steinwurf_mediaextractor_AACSampleExtractor_getDecodingTimestamp(
+jlong Java_com_steinwurf_petro_AACSampleExtractor_getDecodingTimestamp(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -134,7 +134,7 @@ jlong Java_com_steinwurf_mediaextractor_AACSampleExtractor_getDecodingTimestamp(
     return extractor->decoding_timestamp();
 }
 
-jlong Java_com_steinwurf_mediaextractor_AACSampleExtractor_getPresentationTimestamp(
+jlong Java_com_steinwurf_petro_AACSampleExtractor_getPresentationTimestamp(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -142,7 +142,7 @@ jlong Java_com_steinwurf_mediaextractor_AACSampleExtractor_getPresentationTimest
     return extractor->presentation_timestamp();
 }
 
-jlong Java_com_steinwurf_mediaextractor_AACSampleExtractor_getSampleIndex(
+jlong Java_com_steinwurf_petro_AACSampleExtractor_getSampleIndex(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -150,7 +150,7 @@ jlong Java_com_steinwurf_mediaextractor_AACSampleExtractor_getSampleIndex(
     return extractor->sample_index();
 }
 
-jlong Java_com_steinwurf_mediaextractor_AACSampleExtractor_getSampleCount(
+jlong Java_com_steinwurf_petro_AACSampleExtractor_getSampleCount(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -158,7 +158,7 @@ jlong Java_com_steinwurf_mediaextractor_AACSampleExtractor_getSampleCount(
     return extractor->samples();
 }
 
-jlong Java_com_steinwurf_mediaextractor_AACSampleExtractor_getDuration(
+jlong Java_com_steinwurf_petro_AACSampleExtractor_getDuration(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -166,7 +166,7 @@ jlong Java_com_steinwurf_mediaextractor_AACSampleExtractor_getDuration(
     return extractor->media_duration();
 }
 
-jboolean Java_com_steinwurf_mediaextractor_AACSampleExtractor_atEnd(
+jboolean Java_com_steinwurf_petro_AACSampleExtractor_atEnd(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -174,7 +174,7 @@ jboolean Java_com_steinwurf_mediaextractor_AACSampleExtractor_atEnd(
     return extractor->at_end();
 }
 
-void Java_com_steinwurf_mediaextractor_AACSampleExtractor_advance(
+void Java_com_steinwurf_petro_AACSampleExtractor_advance(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -182,7 +182,7 @@ void Java_com_steinwurf_mediaextractor_AACSampleExtractor_advance(
     return extractor->advance();
 }
 
-void Java_com_steinwurf_mediaextractor_AACSampleExtractor_close(
+void Java_com_steinwurf_petro_AACSampleExtractor_close(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
@@ -190,7 +190,7 @@ void Java_com_steinwurf_mediaextractor_AACSampleExtractor_close(
     return extractor->close();
 }
 
-void Java_com_steinwurf_mediaextractor_AACSampleExtractor_finalize(
+void Java_com_steinwurf_petro_AACSampleExtractor_finalize(
     JNIEnv* /*env*/, jobject /*thiz*/, jlong pointer)
 {
     auto client = reinterpret_cast<aac_sample_extractor_jni*>(pointer);

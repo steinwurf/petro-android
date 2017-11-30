@@ -1,7 +1,7 @@
-package com.steinwurf.mediaextractor;
+package com.steinwurf.petro;
 
 @SuppressWarnings("JniMissingFunction")
-public class AACSampleExtractor extends Extractor{
+public class AACSampleExtractor extends Extractor {
 
     static
     {

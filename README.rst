@@ -6,7 +6,6 @@ for audio and video playback with the Android `MediaCodec API <https://developer
 
 Activities
 ----------
-
 Each Activity implements a different solution, either using the Android
 MediaExtractor component or Steinwurf's `petro library <https://github.com/steinwurf/petro>`_
 to extract AAC and H264 samples from a local mp4 file.
@@ -32,7 +31,7 @@ as a basis for a streaming application.
 Building
 --------
 
-First, the native C++ library (``libpetro_android.so``) should be configured
+First, the native C++ libraries should be configured
 and built with waf. This should be done outside Android Studio.
 
 See our detailed description for configuring and using the Android SDK and the
@@ -58,4 +57,3 @@ the native library is always up-to-date.
 If you clean (or rebuild) the project in Android Studio, then you have to
 repeat the waf configure step, because the build folder is removed when the
 project is cleaned.
-

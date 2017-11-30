@@ -1,4 +1,4 @@
-package com.steinwurf.mediaextractor;
+package com.steinwurf.petro;
 
 @SuppressWarnings("JniMissingFunction")
 public class SequenceParameterSet {

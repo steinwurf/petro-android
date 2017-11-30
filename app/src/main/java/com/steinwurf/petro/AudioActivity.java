@@ -9,13 +9,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
-import com.steinwurf.mediaextractor.AACSampleExtractor;
-import com.steinwurf.mediaextractor.Extractor;
 import com.steinwurf.mediaplayer.AudioDecoder;
 import com.steinwurf.mediaplayer.Sample;
 import com.steinwurf.mediaplayer.SampleProvider;
-
-import java.io.IOException;
 
 public class AudioActivity extends AppCompatActivity
 {
@@ -24,7 +20,7 @@ public class AudioActivity extends AppCompatActivity
     public static class AACSampleExtractorSampleProvider implements SampleProvider {
         private final AACSampleExtractor extractor;
 
-        public AACSampleExtractorSampleProvider(AACSampleExtractor extractor) {
+        AACSampleExtractorSampleProvider(AACSampleExtractor extractor) {
             this.extractor = extractor;
         }
 
@@ -86,11 +82,7 @@ public class AudioActivity extends AppCompatActivity
     @Override
     protected void onStart() {
         super.onStart();
-        try {
-            mAudioDecoder.start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        mAudioDecoder.start();
     }
 
     @Override

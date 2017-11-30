@@ -1,24 +1,20 @@
 apply plugin: 'com.android.library'
 
 project.ext {
-    libraryVersionCode = 6
-    libraryGroupId = 'com.steinwurf.mediaextractor'
-    libraryVersion = '5.0.0'
-    repositoryKey = 'libs-' + (libraryVersion.endsWith('SNAPSHOT') ? 'snapshots' : 'release') + '-local'
+    libraryVersionCode = androidGitVersion.code()
+    libraryVersion = androidGitVersion.name()
+    libraryGroupId = 'com.steinwurf.petro'
+    repositoryKey = 'libs-release-local'
 }
 
 android {
     compileSdkVersion project.ext.compileSdkVersion
-    buildToolsVersion project.ext.buildToolsVersion
 
     defaultConfig {
         minSdkVersion 8
         targetSdkVersion project.ext.targetSdkVersion
         versionCode project.libraryVersionCode
         versionName project.libraryVersion
-
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
     }
     buildTypes {
         release {
@@ -30,10 +26,6 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    androidTestImplementation ('com.android.support.test.espresso:espresso-core:2.2.2', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
-    testImplementation  'junit:junit:4.12'
 }
 
 task invokeWaf {

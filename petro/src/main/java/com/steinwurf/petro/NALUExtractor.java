@@ -1,4 +1,6 @@
-package com.steinwurf.mediaextractor;
+package com.steinwurf.petro;
+
+import com.steinwurf.petro.Extractor;
 
 @SuppressWarnings("JniMissingFunction")
 public class NALUExtractor extends Extractor {

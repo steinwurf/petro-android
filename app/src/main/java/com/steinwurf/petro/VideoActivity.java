@@ -14,9 +14,6 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
 
-import com.steinwurf.mediaextractor.Extractor;
-import com.steinwurf.mediaextractor.NALUExtractor;
-import com.steinwurf.mediaextractor.SequenceParameterSet;
 import com.steinwurf.mediaplayer.Sample;
 import com.steinwurf.mediaplayer.SampleProvider;
 import com.steinwurf.mediaplayer.Utils;
@@ -34,7 +31,7 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
     {
         private final NALUExtractor extractor;
 
-        public NaluExtractorSampleProvider(NALUExtractor extractor)
+        NaluExtractorSampleProvider(NALUExtractor extractor)
         {
             this.extractor = extractor;
         }
@@ -54,7 +51,7 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
             try
             {
                 do {
-                    data.write(VideoDecoder.NALU_HEADER);
+                    data.write(Utils.NALU_HEADER);
                     data.write(extractor.getNalu());
                     extractor.advance();
                 } while  (!extractor.atEnd() && !extractor.isBeginningOfAVCSample());
@@ -104,9 +101,9 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
         }
 
         try {
-            spsBuffer.write(VideoDecoder.NALU_HEADER);
+            spsBuffer.write(Utils.NALU_HEADER);
             spsBuffer.write(sps);
-            ppsBuffer.write(VideoDecoder.NALU_HEADER);
+            ppsBuffer.write(Utils.NALU_HEADER);
             ppsBuffer.write(pps);
         } catch (IOException e) {
             e.printStackTrace();
@@ -118,12 +115,6 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
                 spsBuffer.toByteArray(),
                 ppsBuffer.toByteArray(),
                 new NaluExtractorSampleProvider(mNALUExtractor));
-
-        if (mVideoDecoder == null)
-        {
-            finish();
-            return;
-        }
 
         TextureView textureView = findViewById(R.id.textureView);
 
@@ -150,11 +141,7 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
 
         mSurface = new Surface(surface);
         mVideoDecoder.setSurface(mSurface);
-        try {
-            mVideoDecoder.start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        mVideoDecoder.start();
     }
 
     @Override
