@@ -6,6 +6,10 @@ every change, see the Git log.
 
 Latest
 ------
+* tbd
+
+7.0.0
+-----
 * Major: Moved mediaplayer to https://github.com/steinwurf/mediaplayer-android
 * Major: Use androidGitVersion for setting the version of the apps and
   libraries automatically.
