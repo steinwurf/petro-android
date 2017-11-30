@@ -34,20 +34,20 @@ jint JNI_OnLoad(JavaVM* vm, void* /*reserved*/)
 extern "C" {
 #endif
 
-jlong Java_com_steinwurf_mediaextractor_NALUExtractor_init(
+jlong Java_com_steinwurf_petro_NALUExtractor_init(
     JNIEnv* /*env*/, jclass /*clazz*/)
 {
     return reinterpret_cast<jlong>(new nalu_extractor_jni());
 }
 
-jboolean Java_com_steinwurf_mediaextractor_NALUExtractor_isBeginningOfAVCSample(
+jboolean Java_com_steinwurf_petro_NALUExtractor_isBeginningOfAVCSample(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
     return extractor->is_beginning_of_avc_sample();
 }
 
-jbyteArray Java_com_steinwurf_mediaextractor_NALUExtractor_getPPS(
+jbyteArray Java_com_steinwurf_petro_NALUExtractor_getPPS(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
@@ -58,7 +58,7 @@ jbyteArray Java_com_steinwurf_mediaextractor_NALUExtractor_getPPS(
     return jpps;
 }
 
-jbyteArray Java_com_steinwurf_mediaextractor_NALUExtractor_getSPS(
+jbyteArray Java_com_steinwurf_petro_NALUExtractor_getSPS(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
@@ -68,21 +68,21 @@ jbyteArray Java_com_steinwurf_mediaextractor_NALUExtractor_getSPS(
     return jsps;
 }
 
-void Java_com_steinwurf_mediaextractor_NALUExtractor_setFilePath(
+void Java_com_steinwurf_petro_NALUExtractor_setFilePath(
     JNIEnv* env, jobject thiz, jstring file_path)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
     extractor->set_file_path(jutils::java_string_to_string(env, file_path));
 }
 
-jstring Java_com_steinwurf_mediaextractor_NALUExtractor_getFilePath(
+jstring Java_com_steinwurf_petro_NALUExtractor_getFilePath(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
     return jutils::string_to_java_string(env, extractor->file_path());
 }
 
-void Java_com_steinwurf_mediaextractor_NALUExtractor_open(
+void Java_com_steinwurf_petro_NALUExtractor_open(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
@@ -93,19 +93,19 @@ void Java_com_steinwurf_mediaextractor_NALUExtractor_open(
     {
         LOGE << "unable to open extractor: " << error.message();
         auto exception_class = jutils::get_class(
-            env, "com/steinwurf/mediaextractor/Extractor$UnableToOpenException");
+            env, "com/steinwurf/petro/Extractor$UnableToOpenException");
         env->ThrowNew(exception_class, error.message().c_str());
     }
 }
 
-void Java_com_steinwurf_mediaextractor_NALUExtractor_reset(
+void Java_com_steinwurf_petro_NALUExtractor_reset(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
     extractor->reset();
 }
 
-jbyteArray Java_com_steinwurf_mediaextractor_NALUExtractor_getNalu(
+jbyteArray Java_com_steinwurf_petro_NALUExtractor_getNalu(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
@@ -120,7 +120,7 @@ jbyteArray Java_com_steinwurf_mediaextractor_NALUExtractor_getNalu(
     return jsample;
 }
 
-jlong Java_com_steinwurf_mediaextractor_NALUExtractor_getDecodingTimestamp(
+jlong Java_com_steinwurf_petro_NALUExtractor_getDecodingTimestamp(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
@@ -128,7 +128,7 @@ jlong Java_com_steinwurf_mediaextractor_NALUExtractor_getDecodingTimestamp(
     return extractor->decoding_timestamp();
 }
 
-jlong Java_com_steinwurf_mediaextractor_NALUExtractor_getPresentationTimestamp(
+jlong Java_com_steinwurf_petro_NALUExtractor_getPresentationTimestamp(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
@@ -136,49 +136,49 @@ jlong Java_com_steinwurf_mediaextractor_NALUExtractor_getPresentationTimestamp(
     return extractor->presentation_timestamp();
 }
 
-jlong Java_com_steinwurf_mediaextractor_NALUExtractor_getSampleIndex(
+jlong Java_com_steinwurf_petro_NALUExtractor_getSampleIndex(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
     return extractor->sample_index();
 }
 
-jlong Java_com_steinwurf_mediaextractor_NALUExtractor_getSampleCount(
+jlong Java_com_steinwurf_petro_NALUExtractor_getSampleCount(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
     return extractor->samples();
 }
 
-jlong Java_com_steinwurf_mediaextractor_NALUExtractor_getDuration(
+jlong Java_com_steinwurf_petro_NALUExtractor_getDuration(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
     return extractor->media_duration();
 }
 
-jboolean Java_com_steinwurf_mediaextractor_NALUExtractor_atEnd(
+jboolean Java_com_steinwurf_petro_NALUExtractor_atEnd(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
     return extractor->at_end();
 }
 
-void Java_com_steinwurf_mediaextractor_NALUExtractor_advance(
+void Java_com_steinwurf_petro_NALUExtractor_advance(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
     return extractor->advance();
 }
 
-void Java_com_steinwurf_mediaextractor_NALUExtractor_close(
+void Java_com_steinwurf_petro_NALUExtractor_close(
     JNIEnv* env, jobject thiz)
 {
     auto extractor = jutils::get_native_pointer<nalu_extractor_jni>(env, thiz);
     return extractor->close();
 }
 
-void Java_com_steinwurf_mediaextractor_NALUExtractor_finalize(
+void Java_com_steinwurf_petro_NALUExtractor_finalize(
     JNIEnv* /*env*/, jobject /*thiz*/, jlong pointer)
 {
     auto client = reinterpret_cast<nalu_extractor_jni*>(pointer);

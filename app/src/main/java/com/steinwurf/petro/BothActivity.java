@@ -13,10 +13,6 @@ import android.os.Bundle;
 import android.view.Surface;
 import android.view.TextureView;
 
-import com.steinwurf.mediaextractor.AACSampleExtractor;
-import com.steinwurf.mediaextractor.Extractor;
-import com.steinwurf.mediaextractor.NALUExtractor;
-import com.steinwurf.mediaextractor.SequenceParameterSet;
 import com.steinwurf.mediaplayer.AudioDecoder;
 import com.steinwurf.mediaplayer.Utils;
 import com.steinwurf.mediaplayer.VideoDecoder;
@@ -78,9 +74,9 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
         }
 
         try {
-            spsBuffer.write(VideoDecoder.NALU_HEADER);
+            spsBuffer.write(Utils.NALU_HEADER);
             spsBuffer.write(sps);
-            ppsBuffer.write(VideoDecoder.NALU_HEADER);
+            ppsBuffer.write(Utils.NALU_HEADER);
             ppsBuffer.write(pps);
         } catch (IOException e) {
             e.printStackTrace();
@@ -123,12 +119,8 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
         mSurface = new Surface(surface);
         mVideoDecoder.setSurface(mSurface);
 
-        try {
-            mVideoDecoder.start();
-            mAudioDecoder.start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        mVideoDecoder.start();
+        mAudioDecoder.start();
     }
 
     @Override

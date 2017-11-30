@@ -29,18 +29,15 @@ def get_tool_options(properties):
     return options
 
 
-def get_sdk_package_versions():
-    # We extract compileSdkVersion and buildToolsVersion from build.gradle
-    versions = [None, None]
+def get_compile_sdk_version():
+    # We extract compileSdkVersion from build.gradle
     with open('build.gradle') as f:
         for line in f:
             # The version assigments follow this format: "name = value"
             tokens = line.strip().split(' ')
             if tokens[0] == 'compileSdkVersion':
-                versions[0] = tokens[2].strip("'\"")
-            elif tokens[0] == 'buildToolsVersion':
-                versions[1] = tokens[2].strip("'\"")
-    return versions
+                return tokens[2].strip("'\"")
+    return None
 
 
 def configure(properties):
@@ -69,19 +66,14 @@ def configure(properties):
 
     run_command(command)
 
-    # The required package versions are extracted from build.gradle
-    versions = get_sdk_package_versions()
-    if None in versions:
-        raise Exception('Insufficient package version info', versions)
+    # The required sdk versions are extracted from build.gradle
+    sdk_version = get_compile_sdk_version()
+    if sdk_version is None:
+        raise Exception('Unable to find compile sdk version')
 
     # Install the required Android compileSdkVersion
     command = 'echo y | $ANDROID_HOME/tools/android update sdk --all ' \
-              '--filter android-{} --no-ui'.format(versions[0])
-    run_command(command, shell=True)
-
-    # Install the Android build-tools version
-    command = 'echo y | $ANDROID_HOME/tools/android update sdk --all ' \
-              '--filter build-tools-{} --no-ui'.format(versions[1])
+              '--filter android-{} --no-ui'.format(sdk_version)
     run_command(command, shell=True)
 
 

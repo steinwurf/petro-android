@@ -33,7 +33,7 @@ bld(features='cxx cxxshlib copy_binary',
     source=['aac_sample_extractor_jni.cpp'],
     target='aac_sample_extractor_jni',
     install_path=None,
-    copy_path='../mediaextractor/src/main/jniLibs/' + copy_path_platform,
+    copy_path='../petro/src/main/jniLibs/' + copy_path_platform,
     lib=['android'],
     use=['jutils', 'petro'])
 
@@ -41,7 +41,7 @@ bld(features='cxx cxxshlib copy_binary',
     source=['nalu_extractor_jni.cpp'],
     target='nalu_extractor_jni',
     install_path=None,
-    copy_path='../mediaextractor/src/main/jniLibs/' + copy_path_platform,
+    copy_path='../petro/src/main/jniLibs/' + copy_path_platform,
     lib=['android'],
     use=['jutils', 'petro'])
 
@@ -49,6 +49,6 @@ bld(features='cxx cxxshlib copy_binary',
     source=['sequence_parameter_set_jni.cpp'],
     target='sequence_parameter_set_jni',
     install_path=None,
-    copy_path='../mediaextractor/src/main/jniLibs/' + copy_path_platform,
+    copy_path='../petro/src/main/jniLibs/' + copy_path_platform,
     lib=['android'],
     use=['jutils', 'petro'])

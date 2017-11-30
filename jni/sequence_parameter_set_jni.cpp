@@ -35,7 +35,7 @@ jint JNI_OnLoad(JavaVM* vm, void* /*reserved*/)
 extern "C" {
 #endif
 
-jobject Java_com_steinwurf_mediaextractor_SequenceParameterSet_parse(
+jobject Java_com_steinwurf_petro_SequenceParameterSet_parse(
     JNIEnv* env, jclass clazz, jbyteArray jbuffer)
 {
     auto buffer = jutils::java_byte_array_to_vector(env, jbuffer);
@@ -55,21 +55,21 @@ jobject Java_com_steinwurf_mediaextractor_SequenceParameterSet_parse(
     return jsps;
 }
 
-jint Java_com_steinwurf_mediaextractor_SequenceParameterSet_getVideoWidth(
+jint Java_com_steinwurf_petro_SequenceParameterSet_getVideoWidth(
     JNIEnv* env, jobject thiz)
 {
     auto sps = jutils::get_native<sequence_parameter_set_jni>(env, thiz);
     return sps->width();
 }
 
-jint Java_com_steinwurf_mediaextractor_SequenceParameterSet_getVideoHeight(
+jint Java_com_steinwurf_petro_SequenceParameterSet_getVideoHeight(
     JNIEnv* env, jobject thiz)
 {
     auto sps = jutils::get_native<sequence_parameter_set_jni>(env, thiz);
     return sps->height();
 }
 
-void Java_com_steinwurf_mediaextractor_SequenceParameterSet_finalize(
+void Java_com_steinwurf_petro_SequenceParameterSet_finalize(
     JNIEnv* /*env*/, jobject /*thiz*/, jlong pointer)
 {
     auto client = reinterpret_cast<sequence_parameter_set_jni*>(pointer);
