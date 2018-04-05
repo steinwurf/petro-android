@@ -6,6 +6,10 @@ every change, see the Git log.
 
 Latest
 ------
+* tbd
+
+8.0.0
+-----
 * Major: Upgrade to petro 11.
 * Minor: Use gradle 4.4.
 * Major: Move arm and armv7 libraries into armeabi-v7a jni folder.
