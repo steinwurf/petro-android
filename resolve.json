@@ -10,7 +10,7 @@
         "name": "petro",
         "resolver": "git",
         "method": "semver",
-        "major": 9,
+        "major": 11,
         "sources": ["github.com/steinwurf/petro.git"]
     }
 ]
