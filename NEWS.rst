@@ -7,6 +7,7 @@ every change, see the Git log.
 Latest
 ------
 * tbd
+* Major: Upgrade to petro 13
 
 8.0.0
 -----
