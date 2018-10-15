@@ -14,6 +14,13 @@ def configure(conf):
 
 def build(bld):
 
+    CXX = bld.env.get_flat("CXX")
+    # Matches both g++ and clang++
+    if 'g++' in CXX or 'clang' in CXX:
+        # The -fPIC flag is required for all underlying static libraries that
+        # will be included in any shared libraries built in this project
+        bld.env.append_value('CXXFLAGS', '-fPIC')
+
     bld.env.append_unique(
         'DEFINES_STEINWURF_VERSION',
         'STEINWURF_PETRO_ANDROID_VERSION="{}"'.format(VERSION))
