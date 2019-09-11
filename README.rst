@@ -32,7 +32,7 @@ And then add the petro-android dependency to your module's dependencies scope:
 .. code-block::
 
     dependencies {
-        implementation 'com.github.steinwurf:petro-android:8.1.0'
+        implementation 'com.github.steinwurf:petro-android:9.0.0'
     }
 
 Activities
