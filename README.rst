@@ -1,8 +1,39 @@
 petro-android
 =============
 
-This repository contains an application that demonstrates different approaches
-for audio and video playback with the Android `MediaCodec API <https://developer.android.com/reference/android/media/MediaCodec.html>`_.
+.. image:: https://img.shields.io/badge/API-8%2B-brightgreen.svg?style=flat
+    :target: https://android-arsenal.com/api?level=8
+
+.. image:: https://jitpack.io/v/steinwurf/petro-android.svg?style=flat-square
+    :target: https://jitpack.io/#steinwurf/petro-android
+
+This repository contains a library and an application that demonstrates
+different approaches for audio and video playback with the Android
+`MediaCodec API <https://developer.android.com/reference/android/media/MediaCodec.html>`_.
+
+Usage
+-----
+To depend on petro-android you will need add the jitpack.io repository in the
+project build.gradle file:
+
+.. code-block::
+
+    allprojects {
+        repositories {
+            jcenter()
+            maven { url "https://jitpack.io" }
+            // ...
+        }
+    }
+
+And then add the petro-android dependency to your module's dependencies scope:
+
+
+.. code-block::
+
+    dependencies {
+        implementation 'com.github.steinwurf:petro-android:8.1.0'
+    }
 
 Activities
 ----------
@@ -27,6 +58,8 @@ to extract AAC and H264 samples from a local mp4 file.
 This demo application extracts sample data from a local file, but the same
 data can be received from a network source. Therefore the code can be used
 as a basis for a streaming application.
+
+
 
 Building
 --------

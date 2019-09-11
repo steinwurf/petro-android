@@ -1,4 +1,7 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+
+group='com.github.steinwurf'
 
 project.ext {
     libraryVersionCode = androidGitVersion.code()
@@ -38,5 +41,3 @@ task invokeWaf {
     }
 }
 preBuild.dependsOn invokeWaf
-
-apply from: '../deploy.gradle'
