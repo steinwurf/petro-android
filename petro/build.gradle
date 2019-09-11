@@ -30,14 +30,3 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
-
-task invokeWaf {
-    doLast {
-        exec {
-            workingDir getRootProject().projectDir
-            executable 'python'
-            args 'waf', 'build'
-        }
-    }
-}
-preBuild.dependsOn invokeWaf
