@@ -23,7 +23,6 @@ app/src/main/assets/fontconfig/
 app/src/main/assets/ssl/certs/ca-certificates.crt
 
 petro/libs/armeabi/
-petro/src/main/jniLibs/
 petro/src/main/java/org/freedesktop
 petro/src/main/assets/fontconfig/
 petro/src/main/assets/ssl/certs/ca-certificates.crt
