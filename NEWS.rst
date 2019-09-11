@@ -7,6 +7,11 @@ every change, see the Git log.
 Latest
 ------
 * tbd
+
+9.0.0
+-----
+* Minor: Deploy native libraries to git.
+* Minor: Added jitpack.io.
 * Major: Upgrade to petro 13
 
 8.0.0
