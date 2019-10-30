@@ -195,7 +195,8 @@ jint Java_com_steinwurf_petro_AVCSampleExtractor_getLoopCount(
 jbyteArray Java_com_steinwurf_petro_AVCSampleExtractor_getPPS(
     JNIEnv* env, jobject thiz)
 {
-    auto extractor = jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
+    auto extractor = jutils::get_native_pointer<avc_sample_extractor_jni>(
+        env, thiz);
     jbyteArray jpps = env->NewByteArray(extractor->e.pps_size());
     env->SetByteArrayRegion(
         jpps, 0, extractor->e.pps_size(), (jbyte*)extractor->e.pps_data());
@@ -205,7 +206,8 @@ jbyteArray Java_com_steinwurf_petro_AVCSampleExtractor_getPPS(
 jbyteArray Java_com_steinwurf_petro_AVCSampleExtractor_getSPS(
     JNIEnv* env, jobject thiz)
 {
-    auto extractor = jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
+    auto extractor = jutils::get_native_pointer<avc_sample_extractor_jni>(
+        env, thiz);
     jbyteArray jsps = env->NewByteArray(extractor->e.sps_size());
     env->SetByteArrayRegion(
         jsps, 0, extractor->e.sps_size(), (jbyte*)extractor->e.sps_data());

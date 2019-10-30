@@ -77,7 +77,8 @@ void Java_com_steinwurf_petro_TrackExtractor_open(
     }
 }
 
-jobject type_track_to_jtype_track(JNIEnv* env, petro::extractor::track_type type)
+jobject type_track_to_jtype_track(
+    JNIEnv* env, petro::extractor::track_type type)
 {
 
     auto track_type_class = jutils::get_class(
@@ -131,12 +132,15 @@ jobjectArray Java_com_steinwurf_petro_TrackExtractor_getTracks(
         "(ILcom/steinwurf/petro/TrackExtractor$TrackType;)V");
 
     auto tracks = extractor->e.tracks();
-    jobjectArray jtrack_array = env->NewObjectArray(tracks.size(), track_class, NULL);
+    jobjectArray jtrack_array = env->NewObjectArray(
+        tracks.size(), track_class, NULL);
+
     for (uint32_t i = 0; i < tracks.size(); i++)
     {
         auto& track = tracks.at(i);
         auto jtrack_type = type_track_to_jtype_track(env, track.type);
-        jobject jtrack = env->NewObject(track_class, track_constructor, track.id, jtrack_type);
+        jobject jtrack = env->NewObject(
+            track_class, track_constructor, track.id, jtrack_type);
         env->SetObjectArrayElement(jtrack_array, i, jtrack);
     }
 
