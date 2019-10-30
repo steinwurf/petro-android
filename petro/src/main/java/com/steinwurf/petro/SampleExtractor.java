@@ -1,50 +1,52 @@
 package com.steinwurf.petro;
 
 @SuppressWarnings("JniMissingFunction")
-public abstract class Extractor
+public abstract class SampleExtractor
 {
-    public static class UnableToOpenException extends Exception {
-        public UnableToOpenException (String message) {
-            super(message);
-        }
-    }
-
     /**
      * A long representing a pointer to the underlying native object.
      */
     public final long pointer;
 
     /**
-     * Construct Extractor object.
+     * Construct SampleExtractor object.
      * @param pointer long representing a pointer to the underlying native object.
      */
-    protected Extractor(long pointer)
+    protected SampleExtractor(long pointer)
     {
         this.pointer = pointer;
     }
 
     /**
-     * Sets the file path of the fíle to open.
+     * Open the SampleExtractor
      * @param filePath the path of the file.
-     */
-    public abstract void setFilePath(String filePath);
-
-    /**
-     * Returns the file path.
-     * @return the file path.
-     */
-    public abstract String getFilePath();
-
-    /**
-     * Open the Extractor
+     * @param trackId the track Id to use for the extraction
      * @throws UnableToOpenException if the extractor was unable to open.
      */
-    public abstract void open() throws UnableToOpenException;
+    public abstract void open(String filePath, int trackId) throws UnableToOpenException;
+
+    /**
+     * Get the set track ID
+     * @return the set track ID
+     */
+    public abstract long getTrackId();
+
+    /**
+     * Close the SampleExtractor.
+     */
+    public abstract void close();
 
     /**
      * Reset the state of the extractor
      */
     public abstract void reset();
+
+    /**
+     * Get a sample at the current position
+     * @return sample at current position
+     */
+    public native byte[] getSample();
+
 
     /**
      * Returns the decoding timestamp related to the current sample in microseconds
@@ -88,8 +90,14 @@ public abstract class Extractor
     public abstract void advance();
 
     /**
-     * Close the Extractor.
+     * Set looping enabled or disabled
+     * @param enabled if true, looping will be enabled, otherwise not.
      */
-    public abstract void close();
-}
+    public abstract void setLoopingEnabled(boolean enabled);
 
+    /**
+     * Get the number of times the extractor has looped.
+     * @return the number of times the extractor has looped.
+     */
+    public abstract int getLoopCount();
+}

@@ -1,32 +1,26 @@
 package com.steinwurf.petro;
 
 @SuppressWarnings("JniMissingFunction")
-public class NALUExtractor extends Extractor {
+public class AVCSampleExtractor extends SampleExtractor {
 
     static
     {
-        System.loadLibrary("nalu_extractor_jni");
+        System.loadLibrary("avc_sample_extractor_jni");
     }
 
     /**
-     * Construct a native Extractor and returns a long value which represents
+     * Construct a native SampleExtractor and returns a long value which represents
      * the pointer of the created object.
      */
     private static native long init();
 
     /**
-     * Constructs an NALUExtractor
+     * Constructs an AACSampleExtractor
      */
-    public NALUExtractor()
+    public AVCSampleExtractor()
     {
         super(init());
     }
-
-    /**
-     * Returns true if this NALU sample is the beginning of the AVCSample
-     * @return true if this NALU sample is the beginning of the AVCSample
-     */
-    public native boolean isBeginningOfAVCSample();
 
     /**
      * Returns the pps data without NALU header
@@ -40,16 +34,20 @@ public class NALUExtractor extends Extractor {
      */
     public native byte[] getSPS();
 
-    public native byte[] getNalu();
+    /**
+     * Get the size of the nalu sizes within the samples.
+     * @return the size of the nalu sizes within the samples.
+     */
+    public native int getNALULengthSize();
 
     @Override
-    public native void setFilePath(String filePath);
+    public native byte[] getSample();
 
     @Override
-    public native String getFilePath();
+    public native void open(String filePath, int trackId) throws UnableToOpenException;
 
     @Override
-    public native void open() throws UnableToOpenException;
+    public native long getTrackId();
 
     @Override
     public native void reset();
@@ -74,6 +72,12 @@ public class NALUExtractor extends Extractor {
 
     @Override
     public native void advance();
+
+    @Override
+    public native void setLoopingEnabled(boolean enabled);
+
+    @Override
+    public native int getLoopCount();
 
     @Override
     public native void close();

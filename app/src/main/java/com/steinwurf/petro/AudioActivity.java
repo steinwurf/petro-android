@@ -57,15 +57,31 @@ public class AudioActivity extends AppCompatActivity
         Intent intent = getIntent();
         String filePath = intent.getStringExtra(MainActivity.FILEPATH);
 
+
         mAACSampleExtractor = new AACSampleExtractor();
-        mAACSampleExtractor.setFilePath(filePath);
         try {
-            mAACSampleExtractor.open();
-        } catch (Extractor.UnableToOpenException e) {
+            TrackExtractor trackExtractor = new TrackExtractor();
+            trackExtractor.open(filePath);
+            TrackExtractor.Track[] tracks = trackExtractor.getTracks();
+            int trackId = -1;
+            for (TrackExtractor.Track track : tracks)
+            {
+                if (track.type == TrackExtractor.TrackType.AAC) {
+                    trackId = track.id;
+                    break;
+                }
+            }
+            if (trackId == -1)
+            {
+                finish();
+            }
+            mAACSampleExtractor.open(filePath, trackId);
+        } catch (UnableToOpenException e) {
             e.printStackTrace();
             finish();
             return;
         }
+        mAACSampleExtractor.setLoopingEnabled(true);
 
         mAudioDecoder = AudioDecoder.build(
                 mAACSampleExtractor.getMPEGAudioObjectType(),

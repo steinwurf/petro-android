@@ -28,7 +28,7 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
     private AACSampleExtractor mAACSampleExtractor;
 
     private VideoDecoder mVideoDecoder;
-    private NALUExtractor mNALUExtractor;
+    private AVCSampleExtractor mAVCSampleExtractor;
     private Surface mSurface;
 
     @Override
@@ -39,20 +39,39 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
         Intent intent = getIntent();
         String filePath = intent.getStringExtra(MainActivity.FILEPATH);
 
-        mNALUExtractor = new NALUExtractor();
-        mNALUExtractor.setFilePath(filePath);
+        mAVCSampleExtractor = new AVCSampleExtractor();
 
         mAACSampleExtractor = new AACSampleExtractor();
-        mAACSampleExtractor.setFilePath(filePath);
 
         try {
-            mNALUExtractor.open();
-            mAACSampleExtractor.open();
-        } catch (Extractor.UnableToOpenException e) {
+            TrackExtractor trackExtractor = new TrackExtractor();
+            trackExtractor.open(filePath);
+            TrackExtractor.Track[] tracks = trackExtractor.getTracks();
+            int videoTrackId = -1;
+            int audioTrackId = -1;
+            for (TrackExtractor.Track track : tracks)
+            {
+                if (track.type == TrackExtractor.TrackType.AAC) {
+                    audioTrackId = track.id;
+                }
+
+                if (track.type == TrackExtractor.TrackType.AVC1) {
+                    videoTrackId = track.id;
+                }
+            }
+            if (audioTrackId == -1 || videoTrackId == -1)
+            {
+                finish();
+            }
+            mAVCSampleExtractor.open(filePath, videoTrackId);
+            mAACSampleExtractor.open(filePath, audioTrackId);
+        } catch (UnableToOpenException e) {
             e.printStackTrace();
             finish();
             return;
         }
+        mAVCSampleExtractor.setLoopingEnabled(true);
+        mAACSampleExtractor.setLoopingEnabled(true);
 
         mAudioDecoder = AudioDecoder.build(
                 mAACSampleExtractor.getMPEGAudioObjectType(),
@@ -63,8 +82,8 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
         ByteArrayOutputStream spsBuffer = new ByteArrayOutputStream();
         ByteArrayOutputStream ppsBuffer = new ByteArrayOutputStream();
 
-        byte[] sps = mNALUExtractor.getSPS();
-        byte[] pps = mNALUExtractor.getPPS();
+        byte[] sps = mAVCSampleExtractor.getSPS();
+        byte[] pps = mAVCSampleExtractor.getPPS();
 
         SequenceParameterSet sequenceParameterSet = SequenceParameterSet.parse(sps);
         if (sequenceParameterSet == null)
@@ -87,13 +106,7 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
                 sequenceParameterSet.getVideoHeight(),
                 spsBuffer.toByteArray(),
                 ppsBuffer.toByteArray(),
-                new VideoActivity.NaluExtractorSampleProvider(mNALUExtractor));
-
-        if (mVideoDecoder == null)
-        {
-            finish();
-            return;
-        }
+                new VideoActivity.NaluExtractorSampleProvider(mAVCSampleExtractor));
 
         TextureView textureView = findViewById(R.id.textureView);
 
@@ -111,7 +124,7 @@ public class BothActivity extends Activity implements TextureView.SurfaceTexture
         super.onDestroy();
 
         mAACSampleExtractor.close();
-        mNALUExtractor.close();
+        mAVCSampleExtractor.close();
     }
 
     @Override

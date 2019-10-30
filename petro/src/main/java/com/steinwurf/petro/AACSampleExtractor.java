@@ -1,7 +1,7 @@
 package com.steinwurf.petro;
 
 @SuppressWarnings("JniMissingFunction")
-public class AACSampleExtractor extends Extractor {
+public class AACSampleExtractor extends SampleExtractor {
 
     static
     {
@@ -9,7 +9,7 @@ public class AACSampleExtractor extends Extractor {
     }
 
     /**
-     * Construct a native Extractor and returns a long value which represents
+     * Construct a native SampleExtractor and returns a long value which represents
      * the pointer of the created object.
      */
     private static native long init();
@@ -46,16 +46,14 @@ public class AACSampleExtractor extends Extractor {
      */
     public native int getChannelConfiguration();
 
+    @Override
+    public native long getTrackId();
+
+    @Override
     public native byte[] getSample();
 
     @Override
-    public native void setFilePath(String filePath);
-
-    @Override
-    public native String getFilePath();
-
-    @Override
-    public native void open() throws UnableToOpenException;
+    public native void open(String filePath, int trackId) throws UnableToOpenException;
 
     @Override
     public native void reset();
@@ -80,6 +78,12 @@ public class AACSampleExtractor extends Extractor {
 
     @Override
     public native void advance();
+
+    @Override
+    public native void setLoopingEnabled(boolean enabled);
+
+    @Override
+    public native int getLoopCount();
 
     @Override
     public native void close();
