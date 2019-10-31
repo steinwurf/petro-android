@@ -79,3 +79,7 @@ VSProjects
 .idea
 .gradle
 gradle_build
+
+.vscode/
+
+*/.cxx/

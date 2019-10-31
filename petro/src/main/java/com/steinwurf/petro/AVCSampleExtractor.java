@@ -1,6 +1,5 @@
 package com.steinwurf.petro;
 
-@SuppressWarnings("JniMissingFunction")
 public class AVCSampleExtractor extends SampleExtractor {
 
     static

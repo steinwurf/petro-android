@@ -69,4 +69,20 @@ public class TrackExtractor {
      * Close the TrackExtractor.
      */
     public native void close();
+
+    /**
+     * Finalizes the object and it's underlying native part.
+     */
+    @Override
+    protected void finalize() throws Throwable
+    {
+        finalize(pointer);
+        super.finalize();
+    }
+
+    /**
+     * Finalizes the underlying native part.
+     * @param pointer A long representing a pointer to the underlying native object.
+     */
+    private native void finalize(long pointer);
 }
