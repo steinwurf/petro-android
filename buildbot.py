@@ -41,30 +41,10 @@ def get_compile_sdk_version():
 
 
 def configure(properties):
-    # Configure this project with our waf
-    command = [sys.executable, 'waf']
-
-    if properties.get('build_distclean'):
-        command += ['distclean']
 
     # Make sure that the previously built APK and the build folder are deleted
     if properties.get('build_distclean'):
         run_command(['./gradlew', 'clean'])
-
-    command += ['configure', '--git_protocol=git@']
-
-    if 'waf_resolve_path' in properties:
-        command += ['--resolve_path=' + properties['waf_resolve_path']]
-
-    if 'dependency_project' in properties:
-        command += ['--{0}_checkout={1}'.format(
-            properties['dependency_project'],
-            properties['dependency_checkout'])]
-
-    command += ["--cxx_mkspec={}".format(properties['cxx_mkspec'])]
-    command += get_tool_options(properties)
-
-    run_command(command)
 
     # The required sdk versions are extracted from build.gradle
     sdk_version = get_compile_sdk_version()
@@ -78,19 +58,13 @@ def configure(properties):
 
 
 def build(properties):
-    command = [sys.executable, 'waf', 'build', '-v']
-    run_command(command)
-
-    # Gradle builds the APK (this should be run after the waf build)
+    # Gradle builds the APK
     run_command(['./gradlew', 'assembleDebug', '--debug'])
 
 
 def run_tests(properties):
-    command = [sys.executable, 'waf', '-v', '--run_tests']
-    command += get_tool_options(properties)
-    run_command(command)
 
-    # Gradle builds the APK (this should be run after the waf build)
+    # Gradle builds the APK
     run_command(['./gradlew', 'test', '--info'])
 
     device_id = properties['tool_options']['device_id']
@@ -104,14 +78,7 @@ def run_tests(properties):
 
 
 def install(properties):
-    command = [sys.executable, 'waf', '-v', 'install']
-
-    if 'install_path' in properties:
-        command += ['--install_path={0}'.format(properties['install_path'])]
-    if properties.get('install_relative'):
-        command += ['--install_relative']
-
-    run_command(command)
+    pass
 
 
 def main():
