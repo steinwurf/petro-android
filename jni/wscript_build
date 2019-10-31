@@ -35,15 +35,23 @@ bld(features='cxx cxxshlib copy_binary',
     install_path=None,
     copy_path='../petro/src/main/jniLibs/' + copy_path_platform,
     lib=['android'],
-    use=['jutils', 'petro'])
+    use=['jutils', 'petro', 'boost_iostreams'])
 
 bld(features='cxx cxxshlib copy_binary',
-    source=['nalu_extractor_jni.cpp'],
-    target='nalu_extractor_jni',
+    source=['avc_sample_extractor_jni.cpp'],
+    target='avc_sample_extractor_jni',
     install_path=None,
     copy_path='../petro/src/main/jniLibs/' + copy_path_platform,
     lib=['android'],
-    use=['jutils', 'petro'])
+    use=['jutils', 'petro', 'boost_iostreams'])
+
+bld(features='cxx cxxshlib copy_binary',
+    source=['track_extractor_jni.cpp'],
+    target='track_extractor_jni',
+    install_path=None,
+    copy_path='../petro/src/main/jniLibs/' + copy_path_platform,
+    lib=['android'],
+    use=['jutils', 'petro', 'boost_iostreams'])
 
 bld(features='cxx cxxshlib copy_binary',
     source=['sequence_parameter_set_jni.cpp'],

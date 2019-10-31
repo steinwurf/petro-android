@@ -21,6 +21,9 @@ import com.steinwurf.mediaplayer.VideoDecoder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.IllegalChannelGroupException;
+import java.util.List;
 
 
 public class VideoActivity extends Activity implements TextureView.SurfaceTextureListener
@@ -29,9 +32,9 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
 
     public static class NaluExtractorSampleProvider implements SampleProvider
     {
-        private final NALUExtractor extractor;
+        private final AVCSampleExtractor extractor;
 
-        NaluExtractorSampleProvider(NALUExtractor extractor)
+        NaluExtractorSampleProvider(AVCSampleExtractor extractor)
         {
             this.extractor = extractor;
         }
@@ -40,6 +43,7 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
         public boolean hasSample() {
             return !extractor.atEnd();
         }
+
 
         @Override
         public Sample getSample() {
@@ -50,11 +54,18 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
             ByteArrayOutputStream data = new ByteArrayOutputStream();
             try
             {
-                do {
+                ByteBuffer sample = ByteBuffer.wrap(extractor.getSample());
+                int naluLengthSize = extractor.getNALULengthSize();
+
+                while (sample.hasRemaining())
+                {
                     data.write(Utils.NALU_HEADER);
-                    data.write(extractor.getNalu());
-                    extractor.advance();
-                } while  (!extractor.atEnd() && !extractor.isBeginningOfAVCSample());
+                    int naluSize = com.steinwurf.petro.Utils.getNALUSize(naluLengthSize, sample);
+                    data.write(sample.array(), sample.position(), naluSize);
+                    sample.position(sample.position() + naluSize);
+                }
+
+                extractor.advance();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -64,7 +75,7 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
 
     private VideoDecoder mVideoDecoder;
 
-    private NALUExtractor mNALUExtractor;
+    private AVCSampleExtractor mAVCSampleExtractor;
     private Surface mSurface;
 
     @Override
@@ -76,22 +87,36 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
         Intent intent = getIntent();
         String filePath = intent.getStringExtra(MainActivity.FILEPATH);
 
-        mNALUExtractor = new NALUExtractor();
-        mNALUExtractor.setFilePath(filePath);
+        mAVCSampleExtractor = new AVCSampleExtractor();
 
         try {
-            mNALUExtractor.open();
-        } catch (Extractor.UnableToOpenException e) {
+            TrackExtractor trackExtractor = new TrackExtractor();
+            trackExtractor.open(filePath);
+            TrackExtractor.Track[] tracks = trackExtractor.getTracks();
+            int trackId = -1;
+            for (TrackExtractor.Track track : tracks)
+            {
+                if (track.type == TrackExtractor.TrackType.AVC1) {
+                    trackId = track.id;
+                    break;
+                }
+            }
+            if (trackId == -1)
+            {
+                finish();
+            }
+            mAVCSampleExtractor.open(filePath, trackId);
+        } catch (UnableToOpenException e) {
             e.printStackTrace();
             finish();
             return;
         }
-
+        mAVCSampleExtractor.setLoopingEnabled(true);
         ByteArrayOutputStream spsBuffer = new ByteArrayOutputStream();
         ByteArrayOutputStream ppsBuffer = new ByteArrayOutputStream();
 
-        byte[] sps = mNALUExtractor.getSPS();
-        byte[] pps = mNALUExtractor.getPPS();
+        byte[] sps = mAVCSampleExtractor.getSPS();
+        byte[] pps = mAVCSampleExtractor.getPPS();
 
         SequenceParameterSet sequenceParameterSet = SequenceParameterSet.parse(sps);
         if (sequenceParameterSet == null)
@@ -114,7 +139,7 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
                 sequenceParameterSet.getVideoHeight(),
                 spsBuffer.toByteArray(),
                 ppsBuffer.toByteArray(),
-                new NaluExtractorSampleProvider(mNALUExtractor));
+                new NaluExtractorSampleProvider(mAVCSampleExtractor));
 
         TextureView textureView = findViewById(R.id.textureView);
 
@@ -133,7 +158,7 @@ public class VideoActivity extends Activity implements TextureView.SurfaceTextur
     protected void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy");
-        mNALUExtractor.close();
+        mAVCSampleExtractor.close();
     }
 
     @Override

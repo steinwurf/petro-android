@@ -16,12 +16,12 @@
 #include <jutils/ptr_container.hpp>
 #include <jutils/logging.hpp>
 
-#include <petro/extractor/aac_sample_extractor.hpp>
+#include <petro/extractor/avc_sample_extractor.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 
-struct aac_sample_extractor_jni
+struct avc_sample_extractor_jni
 {
-    petro::extractor::aac_sample_extractor e;
+    petro::extractor::avc_sample_extractor e;
     boost::iostreams::mapped_file_source file;
 };
 
@@ -39,17 +39,19 @@ jint JNI_OnLoad(JavaVM* vm, void* /*reserved*/)
 extern "C" {
 #endif
 
-jlong Java_com_steinwurf_petro_AACSampleExtractor_init(
+
+
+jlong Java_com_steinwurf_petro_AVCSampleExtractor_init(
     JNIEnv* /*env*/, jclass /*clazz*/)
 {
-    return reinterpret_cast<jlong>(new aac_sample_extractor_jni());
+    return reinterpret_cast<jlong>(new avc_sample_extractor_jni());
 }
 
-void Java_com_steinwurf_petro_AACSampleExtractor_open(
+void Java_com_steinwurf_petro_AVCSampleExtractor_open(
     JNIEnv* env, jobject thiz, jstring jfile_path, jint track_id)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
 
     auto file_path = jutils::java_string_to_string(env, jfile_path);
 
@@ -79,157 +81,151 @@ void Java_com_steinwurf_petro_AACSampleExtractor_open(
     }
 }
 
-void Java_com_steinwurf_petro_AACSampleExtractor_close(
+void Java_com_steinwurf_petro_AVCSampleExtractor_close(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     extractor->file.close();
     return extractor->e.close();
 }
 
-void Java_com_steinwurf_petro_AACSampleExtractor_reset(
+void Java_com_steinwurf_petro_AVCSampleExtractor_reset(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     extractor->e.reset();
 }
 
-jint Java_com_steinwurf_petro_AACSampleExtractor_getTrackID(
+jint Java_com_steinwurf_petro_AVCSampleExtractor_getTrackID(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     return extractor->e.track_id();
 }
 
-jlong Java_com_steinwurf_petro_AACSampleExtractor_getDuration(
+jlong Java_com_steinwurf_petro_AVCSampleExtractor_getDuration(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     return extractor->e.media_duration();
 }
 
-jlong Java_com_steinwurf_petro_AACSampleExtractor_getDecodingTimestamp(
+jlong Java_com_steinwurf_petro_AVCSampleExtractor_getDecodingTimestamp(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     return extractor->e.decoding_timestamp();
 }
 
-jlong Java_com_steinwurf_petro_AACSampleExtractor_getPresentationTimestamp(
+jlong Java_com_steinwurf_petro_AVCSampleExtractor_getPresentationTimestamp(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     return extractor->e.presentation_timestamp();
 }
 
-void Java_com_steinwurf_petro_AACSampleExtractor_advance(
+void Java_com_steinwurf_petro_AVCSampleExtractor_advance(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     return extractor->e.advance();
 }
 
-jboolean Java_com_steinwurf_petro_AACSampleExtractor_atEnd(
+jboolean Java_com_steinwurf_petro_AVCSampleExtractor_atEnd(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     return extractor->e.at_end();
 }
 
-jbyteArray Java_com_steinwurf_petro_AACSampleExtractor_getSample(
+jbyteArray Java_com_steinwurf_petro_AVCSampleExtractor_getSample(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     jbyteArray jsample = env->NewByteArray(extractor->e.sample_size());
     env->SetByteArrayRegion(
         jsample, 0, extractor->e.sample_size(), (jbyte*)extractor->e.sample_data());
     return jsample;
 }
 
-jlong Java_com_steinwurf_petro_AACSampleExtractor_getSampleIndex(
+jlong Java_com_steinwurf_petro_AVCSampleExtractor_getSampleIndex(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     return extractor->e.sample_index();
 }
 
-jlong Java_com_steinwurf_petro_AACSampleExtractor_getSampleCount(
+jlong Java_com_steinwurf_petro_AVCSampleExtractor_getSampleCount(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     return extractor->e.samples();
 }
 
-void Java_com_steinwurf_petro_AACSampleExtractor_setLoopingEnabled(
+void Java_com_steinwurf_petro_AVCSampleExtractor_setLoopingEnabled(
     JNIEnv* env, jobject thiz, jboolean enabled)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     if (enabled)
         extractor->e.enable_looping();
     else
         extractor->e.disable_looping();
 }
 
-jint Java_com_steinwurf_petro_AACSampleExtractor_getLoopCount(
+jint Java_com_steinwurf_petro_AVCSampleExtractor_getLoopCount(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     return extractor->e.loops();
 }
 
-jbyteArray Java_com_steinwurf_petro_AACSampleExtractor_getADTSHeader(
+jbyteArray Java_com_steinwurf_petro_AVCSampleExtractor_getPPS(
+    JNIEnv* env, jobject thiz)
+{
+    auto extractor = jutils::get_native_pointer<avc_sample_extractor_jni>(
+        env, thiz);
+    jbyteArray jpps = env->NewByteArray(extractor->e.pps_size());
+    env->SetByteArrayRegion(
+        jpps, 0, extractor->e.pps_size(), (jbyte*)extractor->e.pps_data());
+    return jpps;
+}
+
+jbyteArray Java_com_steinwurf_petro_AVCSampleExtractor_getSPS(
+    JNIEnv* env, jobject thiz)
+{
+    auto extractor = jutils::get_native_pointer<avc_sample_extractor_jni>(
+        env, thiz);
+    jbyteArray jsps = env->NewByteArray(extractor->e.sps_size());
+    env->SetByteArrayRegion(
+        jsps, 0, extractor->e.sps_size(), (jbyte*)extractor->e.sps_data());
+    return jsps;
+}
+
+jint Java_com_steinwurf_petro_AVCSampleExtractor_getNALULengthSize(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
-    std::vector<uint8_t> adts(extractor->e.adts_header_size());
-    extractor->e.write_adts_header(adts.data());
-    jbyteArray jadts = env->NewByteArray(adts.size());
-    env->SetByteArrayRegion(jadts, 0, adts.size(), (const jbyte*)adts.data());
-    return jadts;
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
+    return extractor->e.nalu_length_size();
 }
 
-jint Java_com_steinwurf_petro_AACSampleExtractor_getMPEGAudioObjectType(
-    JNIEnv* env, jobject thiz)
-{
-    auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
-    return extractor->e.mpeg_audio_object_type();
-}
-
-jint Java_com_steinwurf_petro_AACSampleExtractor_getFrequencyIndex(
-    JNIEnv* env, jobject thiz)
-{
-    auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
-    return extractor->e.frequency_index();
-}
-
-jint Java_com_steinwurf_petro_AACSampleExtractor_getChannelConfiguration(
-    JNIEnv* env, jobject thiz)
-{
-    auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
-    return extractor->e.channel_configuration();
-}
-
-void Java_com_steinwurf_petro_AACSampleExtractor_finalize(
+void Java_com_steinwurf_petro_AVCSampleExtractor_finalize(
     JNIEnv* /*env*/, jobject /*thiz*/, jlong pointer)
 {
-    auto client = reinterpret_cast<aac_sample_extractor_jni*>(pointer);
+    auto client = reinterpret_cast<avc_sample_extractor_jni*>(pointer);
     assert(client);
     delete client;
 }

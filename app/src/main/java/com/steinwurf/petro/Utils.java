@@ -15,6 +15,8 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 
+import java.nio.ByteBuffer;
+
 public class Utils
 {
     /**
@@ -115,5 +117,24 @@ public class Utils
                 cursor.close();
         }
         return null;
+    }
+
+    public static int getNALUSize(int naluLengthSize, ByteBuffer sample) {
+        if (naluLengthSize == 1)
+        {
+            return sample.get();
+        }
+        else if (naluLengthSize == 2)
+        {
+            return sample.getShort();
+        }
+        else if (naluLengthSize == 4)
+        {
+            return sample.getInt();
+        }
+        else
+        {
+            throw new IllegalArgumentException("Invalid NALU length size");
+        }
     }
 }
