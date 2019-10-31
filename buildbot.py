@@ -64,6 +64,8 @@ def build(properties):
 
 def run_tests(properties):
 
+    run_command(['./gradlew', 'installDebug'])
+
     # Gradle builds the APK
     run_command(['./gradlew', 'test', '--info'])
 
