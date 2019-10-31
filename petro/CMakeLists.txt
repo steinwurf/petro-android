@@ -4,7 +4,7 @@ project(petro_android)
 if(NOT DEFINED STEINWURF_RESOLVE)
     message(STATUS "Resolving dependencies...")
     execute_process(
-        COMMAND python waf resolve --petro_path ../../petro  --endian_path ../../endian
+        COMMAND python waf resolve
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../")
     set(STEINWURF_RESOLVE "${CMAKE_CURRENT_SOURCE_DIR}/../resolve_symlinks")
 endif()
