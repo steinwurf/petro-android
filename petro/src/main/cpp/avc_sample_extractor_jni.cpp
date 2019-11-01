@@ -166,10 +166,10 @@ jlong Java_com_steinwurf_petro_AVCSampleExtractor_getSampleCount(
 }
 
 jint Java_com_steinwurf_petro_AVCSampleExtractor_getTrackId(
-        JNIEnv* env, jobject thiz)
+    JNIEnv* env, jobject thiz)
 {
     auto extractor =
-            jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     return extractor->e.track_id();
 }
 

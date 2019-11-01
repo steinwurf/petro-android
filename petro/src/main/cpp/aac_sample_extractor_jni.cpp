@@ -83,7 +83,7 @@ void Java_com_steinwurf_petro_AACSampleExtractor_close(
     JNIEnv* env, jobject thiz)
 {
     auto extractor =
-         jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
     extractor->file.close();
     extractor->e.close();
 }
@@ -164,10 +164,10 @@ jlong Java_com_steinwurf_petro_AACSampleExtractor_getSampleCount(
 }
 
 jint Java_com_steinwurf_petro_AACSampleExtractor_getTrackId(
-        JNIEnv* env, jobject thiz)
+    JNIEnv* env, jobject thiz)
 {
     auto extractor =
-            jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
     return extractor->e.track_id();
 }
 
