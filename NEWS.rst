@@ -8,6 +8,11 @@ Latest
 ------
 * tbd
 
+10.0.0
+------
+* Major: Use petro 16, and follow the new API design accordingly.
+* Minor: Use Android Studio's CMake for building the native backend.
+
 9.1.0
 -----
 * Minor: Disable waf build in gradle.
