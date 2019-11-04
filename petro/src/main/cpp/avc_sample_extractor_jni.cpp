@@ -87,7 +87,7 @@ void Java_com_steinwurf_petro_AVCSampleExtractor_close(
     auto extractor =
         jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     extractor->file.close();
-    return extractor->e.close();
+    extractor->e.close();
 }
 
 void Java_com_steinwurf_petro_AVCSampleExtractor_reset(
@@ -96,14 +96,6 @@ void Java_com_steinwurf_petro_AVCSampleExtractor_reset(
     auto extractor =
         jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     extractor->e.reset();
-}
-
-jint Java_com_steinwurf_petro_AVCSampleExtractor_getTrackID(
-    JNIEnv* env, jobject thiz)
-{
-    auto extractor =
-        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
-    return extractor->e.track_id();
 }
 
 jlong Java_com_steinwurf_petro_AVCSampleExtractor_getDuration(
@@ -143,7 +135,7 @@ jboolean Java_com_steinwurf_petro_AVCSampleExtractor_atEnd(
 {
     auto extractor =
         jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
-    return extractor->e.at_end();
+    return static_cast<jboolean>(extractor->e.at_end());
 }
 
 jbyteArray Java_com_steinwurf_petro_AVCSampleExtractor_getSample(
@@ -171,6 +163,14 @@ jlong Java_com_steinwurf_petro_AVCSampleExtractor_getSampleCount(
     auto extractor =
         jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
     return extractor->e.samples();
+}
+
+jint Java_com_steinwurf_petro_AVCSampleExtractor_getTrackId(
+    JNIEnv* env, jobject thiz)
+{
+    auto extractor =
+        jutils::get_native_pointer<avc_sample_extractor_jni>(env, thiz);
+    return extractor->e.track_id();
 }
 
 void Java_com_steinwurf_petro_AVCSampleExtractor_setLoopingEnabled(

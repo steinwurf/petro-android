@@ -84,7 +84,7 @@ jobject type_track_to_jtype_track(
     auto track_type_class = jutils::get_class(
         env, "com/steinwurf/petro/TrackExtractor$TrackType");
 
-    auto type_str = "UNKNOWN";
+    std::string type_str = "UNKNOWN";
     switch (type)
     {
     case petro::extractor::track_type::unknown:
@@ -112,7 +112,7 @@ jobject type_track_to_jtype_track(
 
     jfieldID field_id = env->GetStaticFieldID(
         track_type_class,
-        type_str,
+        type_str.c_str(),
         "Lcom/steinwurf/petro/TrackExtractor$TrackType;");
     return env->GetStaticObjectField(track_type_class, field_id);
 }

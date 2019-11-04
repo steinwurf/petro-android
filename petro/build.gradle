@@ -14,7 +14,7 @@ android {
     compileSdkVersion project.ext.compileSdkVersion
 
     defaultConfig {
-        minSdkVersion 8
+        minSdkVersion 14
         targetSdkVersion project.ext.targetSdkVersion
         versionCode project.libraryVersionCode
         versionName project.libraryVersion
@@ -23,6 +23,12 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            version "3.10.2+"
+            path file('CMakeLists.txt')
         }
     }
 }

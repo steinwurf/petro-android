@@ -1,10 +1,10 @@
 [
     {
-        "name": "waf-tools",
+        "name": "petro",
         "resolver": "git",
         "method": "semver",
-        "major": 4,
-        "sources": ["github.com/steinwurf/waf-tools.git"]
+        "major": 16,
+        "sources": ["github.com/steinwurf/petro.git"]
     },
     {
         "name": "boost",
@@ -12,12 +12,5 @@
         "method": "semver",
         "major": 3,
         "sources": ["github.com/steinwurf/boost.git"]
-    },
-    {
-        "name": "petro",
-        "resolver": "git",
-        "method": "semver",
-        "major": 15,
-        "sources": ["github.com/steinwurf/petro.git"]
     }
 ]

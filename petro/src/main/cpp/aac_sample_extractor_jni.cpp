@@ -68,7 +68,7 @@ void Java_com_steinwurf_petro_AACSampleExtractor_open(
         extractor->e.open(
             (uint8_t*)extractor->file.data(),
             extractor->file.size(),
-            track_id,
+            static_cast<uint32_t>(track_id),
             error);
 
     if (error)
@@ -85,7 +85,7 @@ void Java_com_steinwurf_petro_AACSampleExtractor_close(
     auto extractor =
         jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
     extractor->file.close();
-    return extractor->e.close();
+    extractor->e.close();
 }
 
 void Java_com_steinwurf_petro_AACSampleExtractor_reset(
@@ -94,14 +94,6 @@ void Java_com_steinwurf_petro_AACSampleExtractor_reset(
     auto extractor =
         jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
     extractor->e.reset();
-}
-
-jint Java_com_steinwurf_petro_AACSampleExtractor_getTrackID(
-    JNIEnv* env, jobject thiz)
-{
-    auto extractor =
-        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
-    return extractor->e.track_id();
 }
 
 jlong Java_com_steinwurf_petro_AACSampleExtractor_getDuration(
@@ -141,7 +133,7 @@ jboolean Java_com_steinwurf_petro_AACSampleExtractor_atEnd(
 {
     auto extractor =
         jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
-    return extractor->e.at_end();
+    return static_cast<jboolean>(extractor->e.at_end());
 }
 
 jbyteArray Java_com_steinwurf_petro_AACSampleExtractor_getSample(
@@ -169,6 +161,14 @@ jlong Java_com_steinwurf_petro_AACSampleExtractor_getSampleCount(
     auto extractor =
         jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
     return extractor->e.samples();
+}
+
+jint Java_com_steinwurf_petro_AACSampleExtractor_getTrackId(
+    JNIEnv* env, jobject thiz)
+{
+    auto extractor =
+        jutils::get_native_pointer<aac_sample_extractor_jni>(env, thiz);
+    return extractor->e.track_id();
 }
 
 void Java_com_steinwurf_petro_AACSampleExtractor_setLoopingEnabled(
