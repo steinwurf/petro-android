@@ -1,8 +1,8 @@
 petro-android
 =============
 
-.. image:: https://img.shields.io/badge/API-8%2B-brightgreen.svg?style=flat
-    :target: https://android-arsenal.com/api?level=8
+.. image:: https://img.shields.io/badge/API-14%2B-brightgreen.svg?style=flat
+    :target: https://android-arsenal.com/api?level=14
 
 .. image:: https://jitpack.io/v/steinwurf/petro-android.svg?style=flat-square
     :target: https://jitpack.io/#steinwurf/petro-android
