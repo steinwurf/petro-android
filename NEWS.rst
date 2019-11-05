@@ -8,6 +8,10 @@ Latest
 ------
 * tbd
 
+10.0.1
+------
+* Patch: Fix jitpack.io build.
+
 10.0.0
 ------
 * Major: Use petro 16, and follow the new API design accordingly.
