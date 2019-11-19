@@ -32,7 +32,9 @@ target_compile_definitions(boost
 
 # petro
 
+if (NOT TARGET petro)
 add_subdirectory("${STEINWURF_RESOLVE}/petro" petro)
+endif()
 
 # sequence_parameter_set_jni
 
