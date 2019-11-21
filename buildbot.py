@@ -56,6 +56,8 @@ def configure(properties):
               '--filter android-{} --no-ui'.format(sdk_version)
     run_command(command, shell=True)
 
+    run_command([sys.executable, 'waf', 'resolve'], shell=True)
+
 
 def build(properties):
     # Gradle builds the APK

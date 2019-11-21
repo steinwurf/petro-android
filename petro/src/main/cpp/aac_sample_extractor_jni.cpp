@@ -13,7 +13,6 @@
 #include <jni.h>
 
 #include <jutils/utils.hpp>
-#include <jutils/ptr_container.hpp>
 #include <jutils/logging.hpp>
 
 #include <petro/extractor/aac_sample_extractor.hpp>
