@@ -56,7 +56,7 @@ def configure(properties):
               '--filter android-{} --no-ui'.format(sdk_version)
     run_command(command, shell=True)
 
-    command = [sys.executable, 'waf', 'resolve']
+    run_command([sys.executable, 'waf', 'resolve'], shell=True)
 
 
 def build(properties):
