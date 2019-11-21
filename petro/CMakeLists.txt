@@ -11,14 +11,13 @@ endif()
 
 # jutils
 
-file(GLOB_RECURSE jutils_sources ./src/main/cpp/jutils/*.cpp)
-add_library(jutils STATIC ${jutils_sources})
-add_library(steinwurf::jutils ALIAS jutils)
-target_include_directories(jutils INTERFACE src/main/cpp/)
-target_compile_features(jutils PUBLIC cxx_std_11)
+if (NOT TARGET jutils)
+add_subdirectory("${STEINWURF_RESOLVE}/jutils" jutils)
+endif()
 
 # boost
 
+if (NOT TARGET boost)
 add_library(boost STATIC "${STEINWURF_RESOLVE}/boost/libs/iostreams/src/mapped_file.cpp")
 target_include_directories(boost
     PUBLIC "${STEINWURF_RESOLVE}/boost/")
@@ -29,6 +28,7 @@ target_compile_definitions(boost
     PRIVATE BOOST_DETAIL_NO_CONTAINER_FWD
     PRIVATE BOOST_SYSTEM_NO_DEPRECATED
     PRIVATE BOOST_NO_AUTO_PTR)
+endif()
 
 # petro
 

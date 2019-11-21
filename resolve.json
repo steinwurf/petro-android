@@ -7,6 +7,13 @@
         "sources": ["github.com/steinwurf/petro.git"]
     },
     {
+        "name": "jutils",
+        "resolver": "git",
+        "method": "semver",
+        "major": 1,
+        "sources": ["github.com/steinwurf/jutils.git"]
+    },
+    {
         "name": "boost",
         "resolver": "git",
         "method": "semver",
