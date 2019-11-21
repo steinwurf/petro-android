@@ -29,6 +29,7 @@ android {
         cmake {
             version "3.10.2+"
             path file('CMakeLists.txt')
+            arguments "-DCMAKE_VERBOSE_MAKEFILE=1"
         }
     }
 }
