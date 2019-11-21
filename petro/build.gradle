@@ -18,6 +18,12 @@ android {
         targetSdkVersion project.ext.targetSdkVersion
         versionCode project.libraryVersionCode
         versionName project.libraryVersion
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+            }
+        }
     }
     buildTypes {
         release {
@@ -29,7 +35,6 @@ android {
         cmake {
             version "3.10.2+"
             path file('CMakeLists.txt')
-            arguments "-DCMAKE_VERBOSE_MAKEFILE=1"
         }
     }
 }
